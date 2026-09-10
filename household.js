@@ -7,7 +7,7 @@ const CSS = `
 :host, .hh * { box-sizing: border-box; }
 .hh{
   --ink:#f4f1ea; --dim:#9a948a; --faint:#5e594f;
-  --bg:#12110f; --card:#1a1815; --line:#2b2823;
+  --bg:#14120f; --card:#1e1b17; --line:#302c26;
   --gold:#e8b45c; --good:#7ed1a5; --warn:#e2a03f; --bad:#e07a5f; --fav:#c78ad6;
   background:var(--bg); color:var(--ink); min-height:100vh; min-height:100svh;
   font:400 16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,system-ui,sans-serif;
@@ -54,6 +54,21 @@ const CSS = `
 @media(min-width:620px){.three{grid-template-columns:repeat(3,1fr)}}
 
 .card{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:17px 18px}
+
+/* a section wears its aisle's colour */
+.sect{--acc:var(--gold)}
+.sect h2{color:var(--acc)}
+.sect h2::before{content:'';display:inline-block;width:22px;height:3px;border-radius:99px;
+  background:var(--acc);margin-right:9px;vertical-align:middle;opacity:.9}
+.sect h2 span{color:var(--faint)}
+
+/* the shelf: a real photograph, or a coloured tile with its letter */
+.thumb{width:54px;height:54px;border-radius:11px;flex:none;overflow:hidden;position:relative;
+  background:#221f1b;display:grid;place-items:center}
+.thumb img{width:100%;height:100%;object-fit:contain;background:#fff;display:block}
+.thumb .ltr{font:700 19px/1 inherit;color:#14120f;width:100%;height:100%;display:grid;place-items:center;
+  background:var(--acc);opacity:.92}
+.row.item{gap:14px}
 .klabel{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin:0 0 9px}
 .big{font-size:clamp(23px,7.2vw,31px);line-height:1;letter-spacing:-.03em;font-weight:600;
   font-variant-numeric:tabular-nums;margin:0}
@@ -140,6 +155,23 @@ const CSS = `
 .scan:active{transform:translateY(1px)}
 .scan svg{width:19px;height:19px;flex:none}
 `;
+
+const AISLE_TINT = {
+  'Produce':'#7ed1a5', 'Bakery':'#e0b878', 'Deli':'#e39aa6', 'Meat & Seafood':'#e07a5f',
+  'Dairy':'#f0e2c0', 'Frozen':'#8fc7e8', 'Aisle 3 · Soup & Canned':'#d9a24a',
+  'Aisle 4 · Pasta & Rice':'#e8a552', 'Aisle 5 · Cereal':'#e8c94a',
+  'Aisle 6 · Baking & Spices':'#c9a0dc', 'Aisle 7 · Condiments':'#6ec7b8',
+  'Aisle 8 · Beverages':'#78c4d6', 'Aisle 9 · Snacks':'#e08fb8',
+  'Aisle 12 · Home':'#9aa4b2', 'Unfiled':'#8d857a'
+};
+const CAT_TINT = {
+  'Produce':'#7ed1a5','Bread & Bakery':'#e0b878','Deli & Prepared Food':'#e39aa6','Meat':'#e07a5f',
+  'Dairy & Eggs':'#f0e2c0','Frozen':'#8fc7e8','Soups & Canned Goods':'#d9a24a',
+  'Rice, Pasta & Beans':'#e8a552','Breakfast':'#e8c94a','Baking & Cooking':'#c9a0dc',
+  'Condiments & Sauces':'#6ec7b8','Beverages':'#78c4d6','Snacks':'#e08fb8',
+  'Office, Home & Garden':'#9aa4b2','Other':'#8d857a'
+};
+const AISLE_COLOR = i => (i && (AISLE_TINT[i.aisle] || CAT_TINT[i.category])) || '#e8b45c';
 
 const P = n => '$' + Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 const esc = s => String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -254,7 +286,12 @@ class PierceHousehold extends HTMLElement {
     const q = +i.qty||0, par = +i.par||0, ceil = Math.max(par*3, q, 1);
     const cls = q === 0 ? 'no' : q <= par ? 'lo' : 'ok';
     const gone = q === 0 && /OUT OF STOCK/.test(i.notes||'');
-    return `<div class="row">
+    const img = (i.image||'').trim();
+    const thumb = img
+      ? `<span class="thumb"><img src="${esc(img)}" alt="" loading="lazy"
+           onerror="this.parentNode.innerHTML='<span class=&quot;ltr&quot;>${esc(i.title.trim()[0]||'?')}</span>'"></span>`
+      : `<span class="thumb"><span class="ltr">${esc(i.title.trim()[0]||'?')}</span></span>`;
+    return `<div class="row item" style="--acc:${AISLE_COLOR(i)}">${thumb}
       <div class="grow">
         <p class="rt">${esc(i.title)}</p>
         <p class="rs">${gone ? '<span class="bad">never delivered</span> · ' : ''}${
@@ -352,7 +389,7 @@ class PierceHousehold extends HTMLElement {
       : this.groupBy==='brand' ? (b[1].length-a[1].length) || a[0].localeCompare(b[0])
       : a[0].localeCompare(b[0]));
     return sorted.map(([c,list]) =>
-      `<div class="sect"><h2>${esc(c)}<span>${list.length}</span></h2><div class="rows">${
+      `<div class="sect" style="--acc:${AISLE_COLOR(list[0])}"><h2>${esc(c)}<span>${list.length}</span></h2><div class="rows">${
         list.sort((a,b)=>a.title.localeCompare(b.title)).map(i=>this.itemRow(i)).join('')}</div></div>`).join('');
   }
 
