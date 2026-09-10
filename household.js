@@ -13,7 +13,11 @@ const CSS = `
   font:400 16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,system-ui,sans-serif;
   -webkit-font-smoothing:antialiased; padding:0 0 132px; text-wrap:pretty;
 }
+.hh.money{ padding-bottom:48px;
+}
 .hh ::-webkit-scrollbar{width:0;height:0}
+.hh{position:fixed;inset:0;width:100vw;height:100vh;height:100svh;
+    overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;z-index:100000}
 .wrap{max-width:760px;margin:0 auto;padding:0 20px}
 @media(min-width:1000px){ .wrap{max-width:1140px;padding:0 32px} }
 
@@ -116,7 +120,8 @@ const CSS = `
 .scanbar{position:fixed;left:0;right:0;bottom:0;padding:12px 20px calc(14px + env(safe-area-inset-bottom));
   background:linear-gradient(to top,var(--bg) 68%,rgba(18,17,15,0));z-index:20}
 @media(min-width:820px){
-  .scanbar{left:auto;right:32px;bottom:24px;padding:0;background:none;width:340px}
+  .scanbar{left:50%;transform:translateX(-50%);right:auto;bottom:24px;padding:0;
+    background:none;width:min(560px,calc(100vw - 64px))}
   .scaninner{gap:8px}
   .modes{box-shadow:0 10px 34px rgba(0,0,0,.55)}
   .scan{padding:15px;font-size:15px}
@@ -143,7 +148,7 @@ const day = d => new Date(d).toLocaleDateString('en-US',{month:'short',day:'nume
 const num = q => Number(q)%1 ? Number(q).toFixed(2).replace(/0$/,'') : String(Number(q));
 
 class PierceHousehold extends HTMLElement {
-  static get observedAttributes(){ return ['household-json']; }
+  static get observedAttributes(){ return ['household-json','hh-view']; }
 
   connectedCallback(){
     if (this._built) return;
@@ -153,6 +158,8 @@ class PierceHousehold extends HTMLElement {
     this.favPerson = null;
     this.filter = '';
     this.groupBy = 'aisle';
+    this.view = this.getAttribute('hh-view') === 'money' ? 'money' : 'house';
+    this.tab = this.view === 'money' ? 'overview' : 'today';
     this.data = this.data || {items:[],spend:[],subs:[],people:[],pets:[]};
     const s = document.createElement('style'); s.textContent = CSS;
     this.root = document.createElement('div'); this.root.className = 'hh';
@@ -168,6 +175,12 @@ class PierceHousehold extends HTMLElement {
   }
 
   attributeChangedCallback(n,o,v){
+    if (n === 'hh-view'){
+      this.view = v === 'money' ? 'money' : 'house';
+      this.tab = this.view === 'money' ? 'overview' : 'today';
+      if (this._built) this.render();
+      return;
+    }
     if (n !== 'household-json' || !v) return;
     try { this.data = JSON.parse(v); } catch(_) { return this.mark('bad-json'); }
     if (this._built) this.render();
@@ -247,7 +260,7 @@ class PierceHousehold extends HTMLElement {
         <p class="rs">${gone ? '<span class="bad">never delivered</span> · ' : ''}${
           i.brand ? `<span class="brand">${esc(i.brand)}</span> · ` : ''}${esc(i.aisle||i.category||'')}${
           i.upc ? ` · ${esc(i.upc)}` : ''}${
-          i.lastPrice ? ` · ${P(+i.lastPrice)}${i.lastStore?` at ${esc(i.lastStore)}`:''}` : ''}</p>
+          (this.view==='money' && i.lastPrice) ? ` · ${P(+i.lastPrice)}${i.lastStore?` at ${esc(i.lastStore)}`:''}` : ''}</p>
         <div class="bar"><i class="${cls}" style="width:${Math.min(100,q/ceil*100)}%"></i></div>
       </div>
       <div class="step">
@@ -267,6 +280,30 @@ class PierceHousehold extends HTMLElement {
   }
 
   /* ---------- tabs ---------- */
+  house(){
+    const items = this.data.items||[], low = this.low();
+    const pets = (this.data.pets||[]).length;
+    const floors = new Set(items.map(i=>i.location||'Kitchen'));
+    const noUpc = items.filter(i => !(i.upc||'').trim()).length;
+    const gone = items.filter(i => /OUT OF STOCK/.test(i.notes||''));
+    return `
+      <div class="grid stats">
+        <div class="card"><p class="klabel">In the house</p><p class="big">${items.length}</p>
+          <p class="sub">${floors.size} location${floors.size===1?'':'s'}</p></div>
+        <div class="card"><p class="klabel">Running low</p><p class="big ${low.length?'warn':''}">${low.length}</p>
+          <p class="sub">${low.length?'need replacing':'all above par'}</p></div>
+        <div class="card"><p class="klabel">Animals</p><p class="big">${pets}</p>
+          <p class="sub">${(this.data.pets||[]).filter(p=>!p.food).length} with no food on file</p></div>
+        <div class="card"><p class="klabel">Not scanned</p><p class="big">${noUpc}</p>
+          <p class="sub">no barcode yet</p></div>
+      </div>
+      <div class="sect"><h2>Running low${low.length?`<span>${low.length}</span>`:''}</h2>${
+        low.length ? `<div class="rows">${low.map(i=>this.itemRow(i)).join('')}</div>`
+                   : `<div class="card"><p class="empty">Nothing below par. The kitchen is stocked.</p></div>`}</div>
+      ${gone.length ? `<div class="sect"><h2>Ordered, never turned up</h2><div class="rows">${
+        gone.map(i=>this.itemRow(i)).join('')}</div></div>` : ''}`;
+  }
+
   today(){
     const week = this.since(7), month = this.since(30), low = this.low();
     const declined = (this.data.spend||[]).filter(s=>s.declined).length;
@@ -286,9 +323,6 @@ class PierceHousehold extends HTMLElement {
         <div class="card"><p class="klabel">In the kitchen</p><p class="big">${(this.data.items||[]).length}</p>
           <p class="sub">${low.length ? `<span class="warn">${low.length} running low</span>` : 'all above par'}</p></div>
       </div>
-      <div class="sect"><h2>Running low${low.length?`<span>${low.length}</span>`:''}</h2>${
-        low.length ? `<div class="rows">${low.map(i=>this.itemRow(i)).join('')}</div>`
-                   : `<div class="card"><p class="empty">Nothing below par. The kitchen is stocked.</p></div>`}</div>
       ${flags.length ? `<div class="sect"><h2>Needs a look</h2><div class="rows pair">${flags.map(f=>`
         <div class="row"><span class="dot" style="background:var(--${f.bad?'bad':'warn'})"></span>
           <div class="grow"><p class="rt">${esc(f.t)}</p><p class="rs">${esc(f.n)}</p></div>
@@ -415,26 +449,30 @@ class PierceHousehold extends HTMLElement {
   }
 
   render(){
-    const tabs = [['today','Today'],['kitchen','Kitchen'],['money','Money'],
-                  ['subs','Subs'],['us','Us'],['pets','Pets']];
-    const body = { today:()=>this.today(), kitchen:()=>this.kitchen(), money:()=>this.money(),
-                   subs:()=>this.subs(), us:()=>this.us(), pets:()=>this.pets() }[this.tab]();
+    const tabs = this.view === 'money'
+      ? [['overview','Overview'],['money','Purchases'],['subs','Subscriptions']]
+      : [['today','Today'],['kitchen','Kitchen'],['us','Us'],['pets','Pets']];
+    const views = { today:()=>this.house(), overview:()=>this.today(), kitchen:()=>this.kitchen(),
+                    money:()=>this.money(), subs:()=>this.subs(), us:()=>this.us(), pets:()=>this.pets() };
+    const body = (views[this.tab] || views[tabs[0][0]])();
     const modes = [['in','Putting away'],['out','Using'],['fav','Favourite']];
     const label = this.mode === 'fav'
       ? (this.favPerson ? `Scan a favourite for ${this.favPerson.split(' ')[0]}` : 'Pick who, over on Us')
       : this.mode === 'out' ? 'Scan what you’re taking' : 'Scan what you’re putting away';
 
+    this.root.className = 'hh' + (this.view === 'money' ? ' money' : '');
     this.root.innerHTML = `
       <div class="wrap">
         <header class="top">
-          <div><p class="name">Pierce Household</p><h1 class="h1">Dashboard</h1></div>
+          <div><p class="name">Pierce Household</p><h1 class="h1">${
+            this.view === 'money' ? 'Expenses' : 'Dashboard'}</h1></div>
           <p class="when">${new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}</p>
         </header>
         <div class="tabs" role="tablist">${tabs.map(([k,l])=>
           `<button class="tab" role="tab" data-tab="${k}" aria-selected="${this.tab===k}">${l}</button>`).join('')}</div>
         ${body}
       </div>
-      <div class="scanbar"><div class="scaninner">
+      ${this.view === 'money' ? '' : `<div class="scanbar"><div class="scaninner">
         <div class="modes" role="tablist">${modes.map(([k,l])=>
           `<button class="mode" role="tab" data-mode="${k}" aria-selected="${this.mode===k}">${l}</button>`).join('')}</div>
         <button class="scan${this.mode==='fav'?' fav':''}" data-scan>
@@ -442,7 +480,7 @@ class PierceHousehold extends HTMLElement {
             <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/>
             <path d="M7 8v8M10.5 8v8M14 8v8M17 8v8"/></svg>
           ${esc(label)}</button>
-      </div></div>`;
+      </div></div>`}`;
   }
 }
 
