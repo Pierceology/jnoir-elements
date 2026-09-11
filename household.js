@@ -15,7 +15,7 @@ const CSS = `
     radial-gradient(1100px 600px at 12% -10%, rgba(240,135,78,.16), transparent 62%),
     radial-gradient(900px 520px at 96% 4%, rgba(201,138,224,.11), transparent 60%),
     linear-gradient(180deg, var(--bg2) 0%, var(--bg) 44%);
-  color:var(--ink); min-height:100vh; min-height:100svh;
+  color:var(--ink);
   font:400 16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,system-ui,sans-serif;
   -webkit-font-smoothing:antialiased; text-wrap:pretty;
   padding:0 0 calc(150px + env(safe-area-inset-bottom));
@@ -23,14 +23,15 @@ const CSS = `
 .hh.money{ padding-bottom:48px;
 }
 .hh ::-webkit-scrollbar{width:0;height:0}
-.hh{position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;
-    overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;z-index:100000}
+.hh{position:fixed;inset:0;overflow-y:auto;overflow-x:hidden;
+    -webkit-overflow-scrolling:touch;z-index:100000}
 .wrap{max-width:760px;margin:0 auto;padding:0 20px}
 @media(min-width:1000px){ .wrap{max-width:1140px;padding:0 32px} }
 
 /* row lists become columns as the screen grows */
 .rows{display:grid;gap:8px}
-.rows .row{margin-bottom:0;height:100%}
+.rows > *{min-width:0}
+.rows .row{margin-bottom:0;height:100%;min-width:0;max-width:100%}
 @media(min-width:760px){ .rows{grid-template-columns:repeat(2,minmax(0,1fr))} }
 @media(min-width:1240px){ .rows{grid-template-columns:repeat(3,minmax(0,1fr))} }
 .rows.solo{grid-template-columns:minmax(0,1fr)}
@@ -98,7 +99,7 @@ const CSS = `
 .row:hover{border-color:color-mix(in srgb,var(--acc,#f0b955) 40%,var(--line));
   box-shadow:0 6px 22px rgba(0,0,0,.34)}
 .row:active{transform:scale(.994)}
-.row .grow{flex:1;min-width:0}
+.row .grow{flex:1 1 auto;min-width:0;overflow:hidden}
 .rt{font-size:14.5px;font-weight:500;margin:0;line-height:1.32;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .rt.full{display:block;overflow:visible}
@@ -219,7 +220,7 @@ const MOTION = `
 const BASE = 'https://pierceology.github.io/jnoir-elements/';
 
 const SCAN_CSS = `
-.scr{position:fixed;inset:0;height:100vh;height:100dvh;z-index:100001;background:#0d0b09;
+.scr{position:fixed;inset:0;z-index:100001;background:#0d0b09;
   display:flex;flex-direction:column;color:var(--ink);font:inherit}
 .scr video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
 .scr .veil{position:absolute;inset:0;background:
@@ -339,6 +340,29 @@ class PierceHousehold extends HTMLElement {
     this.root = document.createElement('div'); this.root.className = 'hh';
     this.appendChild(s); this.appendChild(this.root);
     this.addEventListener('click', e => this.onClick(e));
+
+    /* Viewport units lie on iOS - 100vh is the window BEHIND Safari's toolbar and
+       100dvh did not hold either. Measure what is actually visible and set it. */
+    this._fit = () => {
+      const vv = window.visualViewport;
+      const h = Math.round((vv && vv.height) || window.innerHeight || 0);
+      if (!h) return;                       // a backgrounded tab reports 0 - keep the last good one
+      const w = Math.round((vv && vv.width) || document.documentElement.clientWidth || 0);
+      this.root.style.height = h + 'px';
+      this.root.style.minHeight = h + 'px';
+      if (w) this.root.style.width = w + 'px';
+      if (this._scr){
+        this._scr.style.height = h + 'px';
+        if (w) this._scr.style.width = w + 'px';
+      }
+    };
+    this._fit();
+    addEventListener('resize', this._fit);
+    addEventListener('orientationchange', () => setTimeout(this._fit, 250));
+    if (window.visualViewport){
+      visualViewport.addEventListener('resize', this._fit);
+      visualViewport.addEventListener('scroll', this._fit);
+    }
     this.addEventListener('input', e => {
       if (!e.target.matches('.find')) return;
       this.filter = e.target.value;
@@ -511,6 +535,7 @@ class PierceHousehold extends HTMLElement {
       <div class="note">Starting the camera…</div>`;
     this.root.appendChild(w);
     this._scr = w;
+    this._fit();
     this.mark('scanner:open:' + this.mode);
 
     const video = w.querySelector('video');
