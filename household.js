@@ -133,8 +133,10 @@ const CSS = `
 .find::placeholder{color:var(--faint)}
 
 .who{display:flex;align-items:center;gap:12px;margin-bottom:12px}
-.av{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;
-  font:700 14px/1 inherit;color:#12110f;flex:none}
+.av{width:46px;height:46px;border-radius:13px;display:grid;place-items:center;
+  font:700 14px/1 inherit;color:#17130f;flex:none;overflow:hidden;background:#221b16}
+.av svg{width:100%;height:100%;display:block}
+.pill.sex{background:#2b221c;color:var(--dim)}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
 .chip{font-size:12.5px;padding:5px 11px;border-radius:99px;background:#221f1b;
   border:1px solid var(--line);color:var(--dim)}
@@ -249,13 +251,62 @@ const SCAN_CSS = `
 .hit .txt{flex:1;min-width:0}
 .hit .txt b{display:block;font-size:14.5px;font-weight:600;line-height:1.25}
 .hit .txt em{display:block;font-style:normal;font-size:12px;color:var(--dim);margin-top:4px}
+.hit{flex-wrap:wrap}
 .hit .tick{font:700 12px/1 inherit;letter-spacing:.08em;text-transform:uppercase;
   padding:7px 11px;border-radius:99px;white-space:nowrap;flex:none}
+.tick.wide{flex:0 0 100%;text-align:center;margin-top:4px;padding:10px}
+.ask{flex:0 0 100%;display:flex;gap:7px;margin-top:2px}
+.ask button{flex:1;appearance:none;border:1px solid var(--line);border-radius:11px;cursor:pointer;
+  background:#2b221c;color:var(--ink);font:600 13px/1.15 inherit;padding:11px 6px;
+  transition:transform .14s,background .14s,border-color .14s}
+.ask button:active{transform:scale(.96)}
+.ask button b{display:block;font-size:11px;font-weight:700;letter-spacing:.06em;opacity:.62;margin-top:3px}
+.ask button[data-act="in"]{border-color:rgba(99,211,160,.45)}
+.ask button[data-act="out"]{border-color:rgba(240,176,70,.45)}
+.ask button[data-act="fav"]{border-color:rgba(201,138,224,.45)}
+.who-pick{flex:0 0 100%;display:flex;flex-wrap:wrap;gap:7px;margin-top:2px}
+.who-pick button{flex:1 1 44%;display:flex;align-items:center;gap:8px;appearance:none;cursor:pointer;
+  border:1px solid var(--line);border-radius:11px;background:#2b221c;color:var(--ink);
+  font:600 13px/1 inherit;padding:8px 10px}
+.who-pick .av{width:28px;height:28px;border-radius:8px}
 .hit .tick.up{background:rgba(99,211,160,.15);color:var(--good)}
 .hit .tick.dn{background:rgba(240,176,70,.15);color:var(--warn)}
 .hit .tick.no{background:rgba(240,113,90,.15);color:var(--bad)}
 .hit .tick.fv{background:rgba(201,138,224,.15);color:var(--fav)}
 `;
+
+/* Drawn here rather than fetched, so they work offline and take the accent. */
+const FACE = {
+  human: (sex, c) => `<svg viewBox="0 0 64 64" aria-hidden="true">
+    <circle cx="32" cy="32" r="32" fill="${c}" opacity=".18"/>
+    <circle cx="32" cy="25" r="11" fill="${c}"/>
+    ${sex==='f' ? `<path d="M18 26c0-9 6-15 14-15s14 6 14 15c0 4-2 5-2 1 0-7-4-10-12-10s-12 3-12 10c0 4-2 3-2-1z" fill="${c}"/>
+                   <path d="M19 24c-2 8-2 14-1 18 2-3 3-8 3-13zM45 24c2 8 2 14 1 18-2-3-3-8-3-13z" fill="${c}"/>`
+      : sex==='x' ? `<path d="M19 25c0-8 6-13 13-13s13 5 13 13c0 3-2 4-2 0 0-6-4-9-11-9s-11 3-11 9c0 4-2 3-2 0z" fill="${c}"/>`
+                  : `<path d="M20 23c1-8 6-12 12-12s11 4 12 12c-3-4-7-5-12-5s-9 1-12 5z" fill="${c}"/>`}
+    <path d="M12 60c2-11 10-17 20-17s18 6 20 17z" fill="${c}"/></svg>`,
+  cat: (sex, c) => `<svg viewBox="0 0 64 64" aria-hidden="true">
+    <circle cx="32" cy="32" r="32" fill="${c}" opacity=".18"/>
+    <path d="M13 30 15 13l13 8zM51 30 49 13l-13 8z" fill="${c}"/>
+    <ellipse cx="32" cy="36" rx="${sex==='f'?18:20}" ry="${sex==='f'?17:16}" fill="${c}"/>
+    <circle cx="25" cy="33" r="2.7" fill="#17130f"/><circle cx="39" cy="33" r="2.7" fill="#17130f"/>
+    <path d="M32 39.5l-2.6 2.2h5.2z" fill="#17130f"/>
+    <path d="M30 44c.8 1.2 3.2 1.2 4 0" stroke="#17130f" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+    <path d="M14 36h8M14 41h8M50 36h-8M50 41h-8" stroke="#17130f" stroke-width="1.3"
+      opacity=".45" stroke-linecap="round"/></svg>`,
+  dog: (sex, c) => `<svg viewBox="0 0 64 64" aria-hidden="true">
+    <circle cx="32" cy="32" r="32" fill="${c}" opacity=".18"/>
+    <path d="M14 20c-4 6-4 16 0 22 3 4 6 1 6-5V22c0-5-3-6-6-2zM50 20c4 6 4 16 0 22-3 4-6 1-6-5V22c0-5 3-6 6-2z" fill="${c}"/>
+    <ellipse cx="32" cy="34" rx="17" ry="16" fill="${c}"/>
+    <circle cx="26" cy="31" r="2.7" fill="#17130f"/><circle cx="38" cy="31" r="2.7" fill="#17130f"/>
+    <ellipse cx="32" cy="40" rx="4.4" ry="3.2" fill="#17130f"/>
+    <path d="M32 43.5v3.5M28.5 48c1.8 1.4 5.2 1.4 7 0" stroke="#17130f" stroke-width="1.7"
+      fill="none" stroke-linecap="round"/></svg>`
+};
+const faceFor = (kind, sex, accent) => {
+  const k = String(sex||'').toLowerCase()[0];
+  return (FACE[kind] || FACE.human)(k === 'f' ? 'f' : k === 'm' ? 'm' : 'x', accent || '#f0b955');
+};
 
 const P = n => '$' + Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 const esc = s => String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -348,6 +399,12 @@ class PierceHousehold extends HTMLElement {
 
     if (e.target.closest('[data-close-scan]')){ this.closeScanner(); return; }
 
+    const act = e.target.closest('[data-act]');
+    if (act){ this.decide(act.dataset.act); return; }
+
+    const pick = e.target.closest('[data-pick]');
+    if (pick){ this.decide('fav', pick.dataset.pick); return; }
+
     if (e.target.closest('[data-scan]')){
       this.openScanner();
       const detail = {mode:this.mode, person:this.favPerson};
@@ -424,12 +481,8 @@ class PierceHousehold extends HTMLElement {
 
   async openScanner(){
     if (this._scr) return;
-    const who = this.mode === 'fav' ? (this.favPerson || '') : '';
-    const title = this.mode === 'fav' ? `Favourites${who ? ' · ' + who : ''}`
-                : this.mode === 'out' ? 'Taking it out' : 'Putting it away';
-    const sub = this.mode === 'fav' ? 'Scan whatever they love. Nothing moves in the cupboard.'
-              : this.mode === 'out' ? 'Every scan takes one off the count.'
-              : 'Every scan adds one. New things get made from the store catalogue.';
+    const title = 'Scan anything';
+    const sub = "I'll tell you what it is, then ask what you're doing with it.";
     const w = document.createElement('div');
     w.className = 'scr';
     w.innerHTML = `
@@ -496,24 +549,58 @@ class PierceHousehold extends HTMLElement {
       this.mark('scan:miss:' + code);
     } else {
       const aisle = cat.aisles[prod.a] || prod.d || '';
-      const verb = this.mode === 'fav' ? 'fv' : this.mode === 'out' ? 'dn' : 'up';
-      const word = this.mode === 'fav' ? 'favourite' : this.mode === 'out' ? 'taken' : 'added';
+      this._pending = {upc:key, code, product:prod, aisle,
+        aisleOrder: /^\d+$/.test(prod.a) ? 5 : 20 + (parseInt(prod.a,10) || 50)};
       card.innerHTML = `
         <span class="shot">${prod.i ? `<img src="${esc(prod.i)}" alt="">`
                                     : `<span>${esc(prod.n.trim()[0]||'?')}</span>`}</span>
         <div class="txt"><b>${esc(prod.n)}</b>
           <em>${[prod.b, prod.s, aisle, prod.p != null ? P(prod.p) : ''].filter(Boolean).map(esc).join(' · ')}</em></div>
-        <span class="tick ${verb}">${word}</span>`;
-      this.dispatchEvent(new CustomEvent('hh-scanned', {bubbles:true, detail:{
-        mode:this.mode, person:this.favPerson, upc:key, code, product:prod,
-        aisle, aisleOrder: /^\d+$/.test(prod.a) ? 5 : 20 + (parseInt(prod.a,10) || 50)
-      }}));
-      this._seen++;
-      this.mark('scan:hit:' + key + ':' + this.mode);
+        <div class="ask">
+          <button data-act="in">Putting away<b>+1</b></button>
+          <button data-act="out">Using<b>&minus;1</b></button>
+          <button data-act="fav">Favourite<b>WHOSE?</b></button>
+        </div>`;
+      this.say('Which is it?');
+      this.mark('scan:hit:' + key);
     }
     w.appendChild(card);
-    this.say(this._seen ? `${this._seen} scanned. Keep going.` : 'Point it at a barcode.');
-    setTimeout(()=>{ if (this._scr) this._scr.classList.remove('busy'); }, 900);
+    if (!prod){
+      this.say('Point it at a barcode.');
+      setTimeout(()=>{ if (this._scr) this._scr.classList.remove('busy'); }, 1200);
+    }
+  }
+
+  /* the answer to "adding or leaving?" — nothing is written until this runs */
+  decide(mode, person){
+    const p = this._pending; if (!p) return;
+    const card = this._scr && this._scr.querySelector('.hit'); if (!card) return;
+
+    if (mode === 'fav' && !person && this.favPerson) person = this.favPerson;
+    if (mode === 'fav' && !person){
+      const people = (this.data.people||[]).slice().sort((a,b)=>(+a.sortOrder||0)-(+b.sortOrder||0));
+      const ask = card.querySelector('.ask');
+      if (ask) ask.outerHTML = `<div class="who-pick">${people.map(w=>
+        `<button data-pick="${esc(w.title)}"><span class="av">${faceFor('human', w.sex, w.accent)}</span>${
+          esc(w.title.split(' ')[0])}</button>`).join('')}</div>`;
+      this.say('Whose favourite?');
+      return;
+    }
+
+    const word = mode === 'fav' ? (person ? person.split(' ')[0] + "'s favourite" : 'favourite')
+               : mode === 'out' ? 'taken out' : 'put away';
+    const cls  = mode === 'fav' ? 'fv' : mode === 'out' ? 'dn' : 'up';
+    const tail = card.querySelector('.ask') || card.querySelector('.who-pick');
+    if (tail) tail.outerHTML = `<span class="tick wide ${cls}">${esc(word)}</span>`;
+
+    this.dispatchEvent(new CustomEvent('hh-scanned',{bubbles:true,
+      detail:Object.assign({mode, person: person || null}, p)}));
+    this._seen = (this._seen||0) + 1;
+    this._pending = null;
+    this.mark('scan:' + mode + ':' + p.upc);
+    this.say(`${this._seen} done. Next one.`);
+    if (navigator.vibrate) { try { navigator.vibrate([10,40,10]); } catch(_) {} }
+    if (this._scr) this._scr.classList.remove('busy');
   }
 
   closeScanner(){
@@ -710,7 +797,7 @@ class PierceHousehold extends HTMLElement {
       const no  = String(p.avoid||'').split(',').map(s=>s.trim()).filter(Boolean);
       const armed = this.mode==='fav' && this.favPerson===p.title;
       return `<div class="card">
-        <div class="who"><span class="av" style="background:${esc(p.accent||'#e8b45c')}">${initials(p.title)}</span>
+        <div class="who"><span class="av">${faceFor('human', p.sex, p.accent)}</span>
           <div><p class="rt">${esc(p.title)}</p>
             <p class="rs">${fav.length} favourite${fav.length===1?'':'s'}</p></div></div>
         ${fav.length ? `<div class="chips">${fav.map(f=>`<span class="chip">${esc(f)}</span>`).join('')}</div>`
@@ -729,8 +816,8 @@ class PierceHousehold extends HTMLElement {
     pets.forEach(p => { const k = p.floor||'House'; (floors[k] = floors[k]||[]).push(p); });
     return Object.entries(floors).map(([f,list])=>`
       <div class="sect"><h2>${esc(f)}<span>${list.length}</span></h2><div class="rows pair">${list.map(p=>`
-        <div class="row">
-          <span class="dot" style="background:var(--${p.species==='?'?'warn':'good'})"></span>
+        <div class="row" style="--acc:${esc(p.accent || (p.species==='Dog' ? '#e8a552' : '#7fb4d8'))}">
+          <span class="av">${faceFor(p.species==='Dog'?'dog':'cat', p.sex, p.accent || (p.species==='Dog'?'#e8a552':'#7fb4d8'))}</span>
           <div class="grow"><p class="rt">${esc(p.title)}</p>
             <p class="rs">${[p.species==='?'?'species unconfirmed':p.species, p.sex,
               p.sibling?`${p.sex==='Female'?'sister':p.sex==='Male'?'brother':'sibling'} of ${esc(p.sibling)}`:''].filter(Boolean).map(esc).join(' · ')}</p>
@@ -770,10 +857,9 @@ class PierceHousehold extends HTMLElement {
     const views = { today:()=>this.house(), overview:()=>this.today(), kitchen:()=>this.kitchen(),
                     money:()=>this.money(), subs:()=>this.subs(), us:()=>this.us(), pets:()=>this.pets() };
     const body = (views[this.tab] || views[tabs[0][0]])();
-    const modes = [['in','Putting away'],['out','Using'],['fav','Favourite']];
-    const label = this.mode === 'fav'
-      ? (this.favPerson ? `Scan a favourite for ${this.favPerson.split(' ')[0]}` : 'Pick who, over on Us')
-      : this.mode === 'out' ? 'Scan what you’re taking' : 'Scan what you’re putting away';
+    const label = this.mode === 'fav' && this.favPerson
+      ? `Scan ${this.favPerson.split(' ')[0]}'s favourites`
+      : 'Scan an item';
 
     this.root.className = 'hh' + (this.view === 'money' ? ' money' : '');
     this.root.innerHTML = `
@@ -788,8 +874,6 @@ class PierceHousehold extends HTMLElement {
         ${body}
       </div>
       ${this.view === 'money' ? '' : `<div class="scanbar"><div class="scaninner">
-        <div class="modes" role="tablist">${modes.map(([k,l])=>
-          `<button class="mode" role="tab" data-mode="${k}" aria-selected="${this.mode===k}">${l}</button>`).join('')}</div>
         <button class="scan${this.mode==='fav'?' fav':''}" data-scan>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round">
             <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/>
