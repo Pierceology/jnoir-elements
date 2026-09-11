@@ -249,7 +249,7 @@ const MOTION = `
 }`;
 
 const BASE = 'https://pierceology.github.io/jnoir-elements/';
-const BUILD = '11 Sep 15:09';
+const BUILD = '11 Sep 15:11';
 
 const SCAN_CSS = `
 .scr{position:fixed;inset:0;z-index:100001;background:#0d0b09;
@@ -447,6 +447,12 @@ class PierceHousehold extends HTMLElement {
     });
     this.render();
     this.mark('ready');
+
+    /* Wix server-renders the page and caches it, data attribute and all - the
+       payload arriving in the browser was byte-identical for hours while the
+       collection had moved on. So never trust what we were handed: ask for it
+       again as soon as we are on screen. */
+    setTimeout(() => this.reload(), 250);
   }
 
   attributeChangedCallback(n,o,v){
