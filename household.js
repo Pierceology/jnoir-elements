@@ -6,10 +6,14 @@
 const CSS = `
 :host, .hh * { box-sizing: border-box; }
 .hh{
-  --ink:#f4f1ea; --dim:#9a948a; --faint:#5e594f;
-  --bg:#14120f; --card:#1e1b17; --line:#302c26;
-  --gold:#e8b45c; --good:#7ed1a5; --warn:#e2a03f; --bad:#e07a5f; --fav:#c78ad6;
-  background:var(--bg); color:var(--ink); min-height:100vh; min-height:100svh;
+  --ink:#f7f3ec; --dim:#a9a196; --faint:#6d665b;
+  --bg:#17130f; --bg2:#221a15; --card:#241d18; --card2:#2b221c; --line:#3a2f27;
+  --gold:#f0b955; --mango:#f2874e; --good:#63d3a0; --warn:#f0b046; --bad:#f0715a; --fav:#c98ae0;
+  background:
+    radial-gradient(1100px 600px at 12% -10%, rgba(240,135,78,.16), transparent 62%),
+    radial-gradient(900px 520px at 96% 4%, rgba(201,138,224,.11), transparent 60%),
+    linear-gradient(180deg, var(--bg2) 0%, var(--bg) 44%);
+  color:var(--ink); min-height:100vh; min-height:100svh;
   font:400 16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,system-ui,sans-serif;
   -webkit-font-smoothing:antialiased; padding:0 0 132px; text-wrap:pretty;
 }
@@ -53,7 +57,9 @@ const CSS = `
 @media(min-width:820px){ .stats{grid-template-columns:repeat(4,minmax(0,1fr))} }
 @media(min-width:620px){.three{grid-template-columns:repeat(3,1fr)}}
 
-.card{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:17px 18px}
+.card{background:linear-gradient(165deg,var(--card2),var(--card));border:1px solid var(--line);
+  border-radius:16px;padding:17px 18px;transition:transform .18s cubic-bezier(.2,.9,.3,1),border-color .18s}
+.card:hover{border-color:#4a3c32}
 
 /* a section wears its aisle's colour */
 .sect{--acc:var(--gold)}
@@ -77,11 +83,17 @@ const CSS = `
 
 .sect{margin:26px 0 0}
 .sect h2{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);
-  margin:0 0 11px;font-weight:600;display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+  margin:0 0 11px;font-weight:600;display:flex;justify-content:flex-start;align-items:center;gap:0}
+.sect h2 > span{margin-left:auto}
 .sect h2 span{color:var(--faint);font-weight:400;letter-spacing:.04em;text-transform:none;font-size:12px}
 
-.row{display:flex;align-items:center;gap:13px;padding:13px 16px;background:var(--card);
-  border:1px solid var(--line);border-radius:13px;margin-bottom:8px}
+.row{display:flex;align-items:center;gap:13px;padding:13px 16px;
+  background:linear-gradient(165deg,var(--card2),var(--card));
+  border:1px solid var(--line);border-radius:14px;margin-bottom:8px;
+  transition:transform .16s cubic-bezier(.2,.9,.3,1),border-color .16s,box-shadow .16s}
+.row:hover{border-color:color-mix(in srgb,var(--acc,#f0b955) 40%,var(--line));
+  box-shadow:0 6px 22px rgba(0,0,0,.34)}
+.row:active{transform:scale(.994)}
 .row .grow{flex:1;min-width:0}
 .rt{font-size:15px;font-weight:500;margin:0;line-height:1.3}
 .rt.one{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -148,10 +160,12 @@ const CSS = `
   font:600 12.5px/1 inherit;padding:9px 6px;border-radius:8px;white-space:nowrap}
 .mode[aria-selected="true"]{background:#26231e;color:var(--ink)}
 .mode[aria-selected="true"][data-mode="fav"]{color:var(--fav)}
-.scan{width:100%;appearance:none;border:0;border-radius:14px;cursor:pointer;
-  background:var(--gold);color:#12110f;font:700 16px/1 inherit;padding:17px;
+.scan{width:100%;appearance:none;border:0;border-radius:15px;cursor:pointer;
+  background:linear-gradient(100deg,var(--gold),var(--mango));color:#17130f;font:700 16px/1 inherit;padding:17px;
+  animation:breathe 3.6s ease-in-out infinite;
   display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 8px 30px rgba(0,0,0,.5)}
-.scan.fav{background:var(--fav)}
+.scan.fav{background:linear-gradient(100deg,var(--fav),#9a7de0)}
+.scan:hover{filter:brightness(1.06)}
 .scan:active{transform:translateY(1px)}
 .scan svg{width:19px;height:19px;flex:none}
 `;
@@ -173,6 +187,26 @@ const CAT_TINT = {
 };
 const AISLE_COLOR = i => (i && (AISLE_TINT[i.aisle] || CAT_TINT[i.category])) || '#e8b45c';
 
+/* --- motion, all of it switched off for anyone who asks --- */
+const MOTION = `
+@keyframes riseIn{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
+@keyframes breathe{0%,100%{box-shadow:0 8px 30px rgba(0,0,0,.5),0 0 0 0 rgba(240,185,85,0)}
+                   50%{box-shadow:0 8px 34px rgba(0,0,0,.5),0 0 0 7px rgba(240,185,85,.07)}}
+@keyframes drawBar{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes pop{0%{transform:scale(1)}42%{transform:scale(1.24)}100%{transform:scale(1)}}
+@keyframes fillBar{from{width:0}}
+.hh .row,.hh .card{animation:riseIn .42s cubic-bezier(.2,.9,.3,1) both}
+.hh .sect h2::before{transform-origin:left center;animation:drawBar .5s cubic-bezier(.2,.9,.3,1) both}
+.hh .bar i{animation:fillBar .7s cubic-bezier(.2,.9,.3,1)}
+.hh .qty.bump{animation:pop .34s cubic-bezier(.2,.9,.3,1)}
+.hh .thumb img{transition:transform .22s cubic-bezier(.2,.9,.3,1)}
+.hh .row:hover .thumb img{transform:scale(1.09)}
+.hh .tab,.hh .gb,.hh .mode{transition:background .16s,color .16s,transform .16s}
+.hh .tab:active,.hh .gb:active,.hh .mode:active{transform:scale(.96)}
+@media (prefers-reduced-motion:reduce){
+  .hh *,.hh *::before,.hh *::after{animation:none!important;transition:none!important}
+}`;
+
 const P = n => '$' + Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 const esc = s => String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const initials = n => String(n).trim().split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase();
@@ -193,7 +227,7 @@ class PierceHousehold extends HTMLElement {
     this.view = this.getAttribute('hh-view') === 'money' ? 'money' : 'house';
     this.tab = this.view === 'money' ? 'overview' : 'today';
     this.data = this.data || {items:[],spend:[],subs:[],people:[],pets:[]};
-    const s = document.createElement('style'); s.textContent = CSS;
+    const s = document.createElement('style'); s.textContent = CSS + MOTION;
     this.root = document.createElement('div'); this.root.className = 'hh';
     this.appendChild(s); this.appendChild(this.root);
     this.addEventListener('click', e => this.onClick(e));
@@ -255,6 +289,8 @@ class PierceHousehold extends HTMLElement {
       const inc = Number(b.dataset.step) * (String(it.unit).toUpperCase() === 'LB' ? 0.25 : 1);
       it.qty = Math.max(0, Math.round(((+it.qty||0) + inc) * 100) / 100);
       this.render();
+      const q = this.root.querySelector(`[data-step][data-id="${it._id}"]`)?.parentNode?.querySelector('.qty');
+      if (q) { q.classList.add('bump'); setTimeout(()=>q.classList.remove('bump'), 360); }
       this.dispatchEvent(new CustomEvent('hh-qty',{detail:{id:it._id,qty:it.qty},bubbles:true}));
       this.mark(`qty:${it._id}:${it.qty}`);
       return;
@@ -325,13 +361,13 @@ class PierceHousehold extends HTMLElement {
     const gone = items.filter(i => /OUT OF STOCK/.test(i.notes||''));
     return `
       <div class="grid stats">
-        <div class="card"><p class="klabel">In the house</p><p class="big">${items.length}</p>
+        <div class="card"><p class="klabel">In the house</p><p class="big" data-to="${items.length}">${items.length}</p>
           <p class="sub">${floors.size} location${floors.size===1?'':'s'}</p></div>
-        <div class="card"><p class="klabel">Running low</p><p class="big ${low.length?'warn':''}">${low.length}</p>
+        <div class="card"><p class="klabel">Running low</p><p class="big ${low.length?'warn':''}" data-to="${low.length}">${low.length}</p>
           <p class="sub">${low.length?'need replacing':'all above par'}</p></div>
-        <div class="card"><p class="klabel">Animals</p><p class="big">${pets}</p>
+        <div class="card"><p class="klabel">Animals</p><p class="big" data-to="${pets}">${pets}</p>
           <p class="sub">${(this.data.pets||[]).filter(p=>!p.food).length} with no food on file</p></div>
-        <div class="card"><p class="klabel">Not scanned</p><p class="big">${noUpc}</p>
+        <div class="card"><p class="klabel">Not scanned</p><p class="big" data-to="${noUpc}">${noUpc}</p>
           <p class="sub">no barcode yet</p></div>
       </div>
       <div class="sect"><h2>Running low${low.length?`<span>${low.length}</span>`:''}</h2>${
@@ -351,13 +387,13 @@ class PierceHousehold extends HTMLElement {
     ];
     return `
       <div class="grid stats">
-        <div class="card"><p class="klabel">Last 7 days</p><p class="big">${P(this.sum(week))}</p>
+        <div class="card"><p class="klabel">Last 7 days</p><p class="big" data-to="${this.sum(week)}" data-money="1">${P(this.sum(week))}</p>
           <p class="sub">${week.length} purchase${week.length===1?'':'s'}</p></div>
-        <div class="card"><p class="klabel">Last 30 days</p><p class="big">${P(this.sum(month))}</p>
+        <div class="card"><p class="klabel">Last 30 days</p><p class="big" data-to="${this.sum(month)}" data-money="1">${P(this.sum(month))}</p>
           <p class="sub">${declined ? `<span class="bad">${declined} declined</span>` : 'nothing declined'}</p></div>
-        <div class="card"><p class="klabel">Subscriptions</p><p class="big">${P(this.subsTotal())}</p>
+        <div class="card"><p class="klabel">Subscriptions</p><p class="big" data-to="${this.subsTotal()}" data-money="1">${P(this.subsTotal())}</p>
           <p class="sub">every month</p></div>
-        <div class="card"><p class="klabel">In the kitchen</p><p class="big">${(this.data.items||[]).length}</p>
+        <div class="card"><p class="klabel">In the kitchen</p><p class="big" data-to="${(this.data.items||[]).length}">${(this.data.items||[]).length}</p>
           <p class="sub">${low.length ? `<span class="warn">${low.length} running low</span>` : 'all above par'}</p></div>
       </div>
       ${flags.length ? `<div class="sect"><h2>Needs a look</h2><div class="rows pair">${flags.map(f=>`
@@ -403,8 +439,9 @@ class PierceHousehold extends HTMLElement {
           `<button class="gb" role="tab" data-groupby="${k}" aria-selected="${this.groupBy===k}">${l}</button>`).join('')}</div>
         <input class="find" placeholder="Find anything — ${n} items" value="${esc(this.filter)}">
       </div>
-      ${this.groupBy==='aisle' ? `<p class="rs" style="margin:-6px 0 16px">Walk order is a standard
-        Stop &amp; Shop layout, not Winthrop's measured aisles — correct any of them and it sticks.</p>` : ''}
+      ${this.groupBy==='aisle' ? `<p class="rs" style="margin:-6px 0 16px">Aisles come from the real
+        Stop &amp; Shop on Furlong Drive. Ones marked <em>likely</em> are where that department lives,
+        not that exact product — correct any of them and it sticks.</p>` : ''}
       ${noUpc ? `<p class="rs" style="margin:-6px 0 16px">${noUpc} of ${n} have no barcode yet.
         The first scan of anything binds its UPC for good.</p>` : ''}
       <div id="kitchenBody">${this.kitchenBody()}</div>`;
@@ -415,8 +452,8 @@ class PierceHousehold extends HTMLElement {
     const groc = this.since(30).filter(s=>s.category==='Groceries').reduce((a,s)=>a+(+s.amount||0),0);
     return `
       <div class="grid two">
-        <div class="card"><p class="klabel">30 days</p><p class="big">${P(this.sum(this.since(30)))}</p></div>
-        <div class="card"><p class="klabel">Groceries, 30 days</p><p class="big">${P(groc)}</p></div>
+        <div class="card"><p class="klabel">30 days</p><p class="big" data-to="${this.sum(this.since(30))}" data-money="1">${P(this.sum(this.since(30)))}</p></div>
+        <div class="card"><p class="klabel">Groceries, 30 days</p><p class="big" data-to="${groc}" data-money="1">${P(groc)}</p></div>
       </div>
       <div class="sect"><h2>Every purchase</h2><div class="rows">${all.map(s=>`
         <div class="row"><span class="dot" style="background:var(--${s.declined?'bad':'faint'})"></span>
@@ -430,9 +467,9 @@ class PierceHousehold extends HTMLElement {
     const t = this.subsTotal();
     return `
       <div class="grid two">
-        <div class="card"><p class="klabel">Every month</p><p class="big">${P(t)}</p>
+        <div class="card"><p class="klabel">Every month</p><p class="big" data-to="${t}" data-money="1">${P(t)}</p>
           <p class="sub">${list.length} service${list.length===1?'':'s'}</p></div>
-        <div class="card"><p class="klabel">Every year</p><p class="big">${P(t*12)}</p>
+        <div class="card"><p class="klabel">Every year</p><p class="big" data-to="${t*12}" data-money="1">${P(t*12)}</p>
           <p class="sub">at today's rate</p></div>
       </div>
       <div class="sect"><h2>What renews</h2><div class="rows pair">${list.map(s=>{
@@ -480,6 +517,25 @@ class PierceHousehold extends HTMLElement {
         </div>`).join('')}</div></div>`).join('');
   }
 
+  animate(){
+    const els = this.root.querySelectorAll('.card, .row');
+    els.forEach((el,i) => { el.style.animationDelay = Math.min(i*26, 520) + 'ms'; });
+    this.root.querySelectorAll('.big[data-to]').forEach(el => this.countUp(el));
+  }
+
+  countUp(el){
+    const to = parseFloat(el.dataset.to), money = el.dataset.money === '1';
+    if (!isFinite(to)) return;
+    const dur = 780, t0 = performance.now();
+    const step = now => {
+      const k = Math.min(1, (now - t0) / dur);
+      const v = to * (1 - Math.pow(1 - k, 3));
+      el.textContent = money ? P(v) : Math.round(v).toLocaleString('en-US');
+      if (k < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+
   paint(id){
     const el = this.root.querySelector('#'+id);
     if (el) el.innerHTML = this[id]();
@@ -518,6 +574,7 @@ class PierceHousehold extends HTMLElement {
             <path d="M7 8v8M10.5 8v8M14 8v8M17 8v8"/></svg>
           ${esc(label)}</button>
       </div></div>`}`;
+    this.animate();
   }
 }
 
