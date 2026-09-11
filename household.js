@@ -472,12 +472,16 @@ class PierceHousehold extends HTMLElement {
     const reader = new window.ZXing.MultiFormatReader();
     reader.setHints(hints);
     const cv = document.createElement('canvas');
+    /* Only the strip inside the viewfinder is decoded: a quarter of the pixels,
+       so it keeps up on a phone, and it cannot read a barcode you did not aim at. */
     this._dec = {kind:'zxing', read: v => {
-      const w = v.videoWidth, h = v.videoHeight;
-      if (!w || !h) return null;
+      const vw = v.videoWidth, vh = v.videoHeight;
+      if (!vw || !vh) return null;
+      const w = Math.round(vw * 0.82), h = Math.round(vh * 0.46);
+      const sx = ((vw - w) / 2) | 0, sy = ((vh - h) / 2) | 0;
       cv.width = w; cv.height = h;
       const cx = cv.getContext('2d', {willReadFrequently:true});
-      cx.drawImage(v, 0, 0, w, h);
+      cx.drawImage(v, sx, sy, w, h, 0, 0, w, h);
       const data = cx.getImageData(0, 0, w, h).data;
       const lum = new Uint8ClampedArray(w*h);
       for (let i=0, j=0; i<data.length; i+=4, j++)
