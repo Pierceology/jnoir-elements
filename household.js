@@ -207,6 +207,56 @@ const MOTION = `
   .hh *,.hh *::before,.hh *::after{animation:none!important;transition:none!important}
 }`;
 
+const BASE = 'https://pierceology.github.io/jnoir-elements/';
+
+const SCAN_CSS = `
+.scr{position:fixed;inset:0;z-index:100001;background:#0d0b09;display:flex;flex-direction:column;
+  color:var(--ink);font:inherit}
+.scr video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
+.scr .veil{position:absolute;inset:0;background:
+  linear-gradient(rgba(13,11,9,.72),rgba(13,11,9,.16) 28%,rgba(13,11,9,.16) 72%,rgba(13,11,9,.86))}
+.scr .top{position:relative;flex:none;display:flex;align-items:center;justify-content:space-between;
+  gap:12px;padding:calc(14px + env(safe-area-inset-top)) 18px 14px}
+.scr .what{font:700 15px/1.25 inherit}
+.scr .what small{display:block;font:400 12.5px/1.3 inherit;color:var(--dim);margin-top:3px}
+.scr .x{appearance:none;border:1px solid rgba(255,255,255,.22);background:rgba(0,0,0,.45);
+  color:var(--ink);width:40px;height:40px;border-radius:50%;font:600 19px/1 inherit;cursor:pointer;flex:none}
+.scr .frame{position:relative;flex:1;min-height:0;display:grid;place-items:center;padding:0 30px}
+.scr .box{position:relative;width:min(86vw,440px);aspect-ratio:1.7;border-radius:18px;
+  box-shadow:0 0 0 100vmax rgba(13,11,9,.42)}
+.scr .box i{position:absolute;width:30px;height:30px;border:3px solid var(--gold);border-radius:4px}
+.scr .box i:nth-child(1){top:-2px;left:-2px;border-right:0;border-bottom:0;border-radius:14px 0 0 0}
+.scr .box i:nth-child(2){top:-2px;right:-2px;border-left:0;border-bottom:0;border-radius:0 14px 0 0}
+.scr .box i:nth-child(3){bottom:-2px;left:-2px;border-right:0;border-top:0;border-radius:0 0 0 14px}
+.scr .box i:nth-child(4){bottom:-2px;right:-2px;border-left:0;border-top:0;border-radius:0 0 14px 0}
+.scr .box u{position:absolute;left:8px;right:8px;height:2px;border-radius:2px;
+  background:linear-gradient(90deg,transparent,var(--gold),transparent);
+  animation:sweep 2.1s cubic-bezier(.5,0,.5,1) infinite}
+@keyframes sweep{0%,100%{top:10%;opacity:.25}50%{top:88%;opacity:1}}
+.scr .note{position:relative;flex:none;text-align:center;padding:0 24px calc(22px + env(safe-area-inset-bottom));
+  font-size:13.5px;color:var(--dim);min-height:22px}
+.scr.busy .box u{animation:none}
+
+.hit{position:absolute;left:14px;right:14px;bottom:calc(20px + env(safe-area-inset-bottom));
+  background:linear-gradient(165deg,var(--card2),var(--card));border:1px solid var(--line);
+  border-radius:17px;padding:14px;display:flex;gap:13px;align-items:center;
+  box-shadow:0 18px 50px rgba(0,0,0,.6);animation:riseIn .3s cubic-bezier(.2,.9,.3,1) both}
+.hit .shot{width:62px;height:62px;border-radius:12px;background:#fff;flex:none;overflow:hidden;
+  display:grid;place-items:center}
+.hit .shot img{width:100%;height:100%;object-fit:contain}
+.hit .shot span{color:#17130f;font:700 22px/1 inherit;width:100%;height:100%;display:grid;
+  place-items:center;background:var(--gold)}
+.hit .txt{flex:1;min-width:0}
+.hit .txt b{display:block;font-size:14.5px;font-weight:600;line-height:1.25}
+.hit .txt em{display:block;font-style:normal;font-size:12px;color:var(--dim);margin-top:4px}
+.hit .tick{font:700 12px/1 inherit;letter-spacing:.08em;text-transform:uppercase;
+  padding:7px 11px;border-radius:99px;white-space:nowrap;flex:none}
+.hit .tick.up{background:rgba(99,211,160,.15);color:var(--good)}
+.hit .tick.dn{background:rgba(240,176,70,.15);color:var(--warn)}
+.hit .tick.no{background:rgba(240,113,90,.15);color:var(--bad)}
+.hit .tick.fv{background:rgba(201,138,224,.15);color:var(--fav)}
+`;
+
 const P = n => '$' + Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 const esc = s => String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const initials = n => String(n).trim().split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase();
@@ -227,7 +277,7 @@ class PierceHousehold extends HTMLElement {
     this.view = this.getAttribute('hh-view') === 'money' ? 'money' : 'house';
     this.tab = this.view === 'money' ? 'overview' : 'today';
     this.data = this.data || {items:[],spend:[],subs:[],people:[],pets:[]};
-    const s = document.createElement('style'); s.textContent = CSS + MOTION;
+    const s = document.createElement('style'); s.textContent = CSS + MOTION + SCAN_CSS;
     this.root = document.createElement('div'); this.root.className = 'hh';
     this.appendChild(s); this.appendChild(this.root);
     this.addEventListener('click', e => this.onClick(e));
@@ -296,11 +346,183 @@ class PierceHousehold extends HTMLElement {
       return;
     }
 
+    if (e.target.closest('[data-close-scan]')){ this.closeScanner(); return; }
+
     if (e.target.closest('[data-scan]')){
+      this.openScanner();
       const detail = {mode:this.mode, person:this.favPerson};
       this.dispatchEvent(new CustomEvent(this.mode === 'fav' ? 'hh-fav' : 'hh-scan',{detail,bubbles:true}));
       this.mark('scan:' + this.mode + (this.favPerson ? ':' + this.favPerson : ''));
     }
+  }
+
+  /* ---------- the scanner ---------- */
+  norm(code){
+    const d = String(code).replace(/\D/g,'');
+    const out = [];
+    [d, d.replace(/^0+/,''), d.slice(0,-1), d.slice(0,-1).replace(/^0+/,'')]
+      .forEach(v => { const k = v.replace(/^0+/,'') || v; if (k && !out.includes(k)) out.push(k); });
+    return out;
+  }
+
+  async catalogue(){
+    if (this._cat) return this._cat;
+    const r = await fetch(BASE + 'catalog.min.json');
+    this._cat = await r.json();
+    return this._cat;
+  }
+
+  async decoder(){
+    if (this._dec) return this._dec;
+    if ('BarcodeDetector' in window){
+      try {
+        const fmts = await window.BarcodeDetector.getSupportedFormats();
+        const want = ['upc_a','ean_13','upc_e','ean_8','code_128'].filter(f => fmts.includes(f));
+        if (want.length){
+          const det = new window.BarcodeDetector({formats: want});
+          this._dec = {kind:'native', read: async v => {
+            const c = await det.detect(v);
+            return c.length ? c[0].rawValue : null;
+          }};
+          return this._dec;
+        }
+      } catch(_) {}
+    }
+    await new Promise((ok,bad) => {                       // iPhone path
+      if (window.ZXing) return ok();
+      const t = document.createElement('script');
+      t.src = BASE + 'zxing.js'; t.onload = ok; t.onerror = bad;
+      document.head.appendChild(t);
+    });
+    const hints = new Map();
+    const F = window.ZXing.BarcodeFormat;
+    hints.set(window.ZXing.DecodeHintType.POSSIBLE_FORMATS,
+      [F.UPC_A, F.EAN_13, F.UPC_E, F.EAN_8, F.CODE_128]);
+    const reader = new window.ZXing.MultiFormatReader();
+    reader.setHints(hints);
+    const cv = document.createElement('canvas');
+    this._dec = {kind:'zxing', read: v => {
+      const w = v.videoWidth, h = v.videoHeight;
+      if (!w || !h) return null;
+      cv.width = w; cv.height = h;
+      const cx = cv.getContext('2d', {willReadFrequently:true});
+      cx.drawImage(v, 0, 0, w, h);
+      const data = cx.getImageData(0, 0, w, h).data;
+      const lum = new Uint8ClampedArray(w*h);
+      for (let i=0, j=0; i<data.length; i+=4, j++)
+        lum[j] = (data[i]*0.299 + data[i+1]*0.587 + data[i+2]*0.114) | 0;
+      try {
+        const src = new window.ZXing.RGBLuminanceSource(lum, w, h);
+        const bmp = new window.ZXing.BinaryBitmap(new window.ZXing.HybridBinarizer(src));
+        return reader.decode(bmp).getText();
+      } catch(_) { return null; } finally { reader.reset(); }
+    }};
+    return this._dec;
+  }
+
+  say(msg){ const el = this.root.querySelector('.scr .note'); if (el) el.textContent = msg; }
+
+  async openScanner(){
+    if (this._scr) return;
+    const who = this.mode === 'fav' ? (this.favPerson || '') : '';
+    const title = this.mode === 'fav' ? `Favourites${who ? ' · ' + who : ''}`
+                : this.mode === 'out' ? 'Taking it out' : 'Putting it away';
+    const sub = this.mode === 'fav' ? 'Scan whatever they love. Nothing moves in the cupboard.'
+              : this.mode === 'out' ? 'Every scan takes one off the count.'
+              : 'Every scan adds one. New things get made from the store catalogue.';
+    const w = document.createElement('div');
+    w.className = 'scr';
+    w.innerHTML = `
+      <video playsinline muted autoplay></video><div class="veil"></div>
+      <div class="top"><div class="what">${esc(title)}<small>${esc(sub)}</small></div>
+        <button class="x" data-close-scan aria-label="close">&times;</button></div>
+      <div class="frame"><div class="box"><i></i><i></i><i></i><i></i><u></u></div></div>
+      <div class="note">Starting the camera…</div>`;
+    this.root.appendChild(w);
+    this._scr = w;
+    this.mark('scanner:open:' + this.mode);
+
+    const video = w.querySelector('video');
+    try {
+      this._stream = await navigator.mediaDevices.getUserMedia({
+        video:{facingMode:{ideal:'environment'}, width:{ideal:1280}, height:{ideal:720}}, audio:false});
+      video.srcObject = this._stream;
+      await video.play();
+    } catch(err){
+      this.say('No camera. ' + (err && err.name === 'NotAllowedError'
+        ? 'Allow camera access for this page and try again.' : 'This device would not open one.'));
+      this.mark('scanner:no-camera'); return;
+    }
+
+    this.say('Loading the store catalogue…');
+    let cat, dec;
+    try { [cat, dec] = await Promise.all([this.catalogue(), this.decoder()]); }
+    catch(_) { this.say('Could not load the scanner. Check the connection.'); return; }
+    this.say('Point it at a barcode.');
+    this.mark('scanner:ready:' + dec.kind);
+
+    this._seen = 0;
+    const tick = async () => {
+      if (!this._scr) return;
+      if (!w.classList.contains('busy')){
+        let code = null;
+        try { code = await dec.read(video); } catch(_) {}
+        if (code && code !== this._lastCode) this.onCode(code, cat);
+      }
+      this._raf = setTimeout(tick, dec.kind === 'native' ? 180 : 240);
+    };
+    tick();
+  }
+
+  onCode(code, cat){
+    const w = this._scr; if (!w) return;
+    this._lastCode = code;
+    setTimeout(()=>{ if (this._lastCode === code) this._lastCode = null; }, 2200);
+    w.classList.add('busy');
+    if (navigator.vibrate) { try { navigator.vibrate(18); } catch(_) {} }
+
+    let prod = null, key = null;
+    for (const k of this.norm(code)) if (cat.items[k]) { prod = cat.items[k]; key = k; break; }
+
+    const old = w.querySelector('.hit'); if (old) old.remove();
+    const card = document.createElement('div');
+    card.className = 'hit';
+
+    if (!prod){
+      card.innerHTML = `<span class="shot"><span>?</span></span>
+        <div class="txt"><b>Not in the store catalogue</b>
+          <em>${esc(code)} — add it by hand and the next scan will know it.</em></div>
+        <span class="tick no">unknown</span>`;
+      this.mark('scan:miss:' + code);
+    } else {
+      const aisle = cat.aisles[prod.a] || prod.d || '';
+      const verb = this.mode === 'fav' ? 'fv' : this.mode === 'out' ? 'dn' : 'up';
+      const word = this.mode === 'fav' ? 'favourite' : this.mode === 'out' ? 'taken' : 'added';
+      card.innerHTML = `
+        <span class="shot">${prod.i ? `<img src="${esc(prod.i)}" alt="">`
+                                    : `<span>${esc(prod.n.trim()[0]||'?')}</span>`}</span>
+        <div class="txt"><b>${esc(prod.n)}</b>
+          <em>${[prod.b, prod.s, aisle, prod.p != null ? P(prod.p) : ''].filter(Boolean).map(esc).join(' · ')}</em></div>
+        <span class="tick ${verb}">${word}</span>`;
+      this.dispatchEvent(new CustomEvent('hh-scanned', {bubbles:true, detail:{
+        mode:this.mode, person:this.favPerson, upc:key, code, product:prod,
+        aisle, aisleOrder: /^\d+$/.test(prod.a) ? 5 : 20 + (parseInt(prod.a,10) || 50)
+      }}));
+      this._seen++;
+      this.mark('scan:hit:' + key + ':' + this.mode);
+    }
+    w.appendChild(card);
+    this.say(this._seen ? `${this._seen} scanned. Keep going.` : 'Point it at a barcode.');
+    setTimeout(()=>{ if (this._scr) this._scr.classList.remove('busy'); }, 900);
+  }
+
+  closeScanner(){
+    if (this._raf) { clearTimeout(this._raf); this._raf = null; }
+    if (this._stream) { this._stream.getTracks().forEach(t=>t.stop()); this._stream = null; }
+    if (this._scr) { this._scr.remove(); this._scr = null; }
+    this._lastCode = null;
+    this.mark('scanner:closed:' + (this._seen||0));
+    this.dispatchEvent(new CustomEvent('hh-scan-done',{bubbles:true,detail:{count:this._seen||0}}));
   }
 
   /* ---------- derived ---------- */
