@@ -232,7 +232,7 @@ const SCAN_CSS = `
 .scr .x{appearance:none;border:1px solid rgba(255,255,255,.22);background:rgba(0,0,0,.45);
   color:var(--ink);width:40px;height:40px;border-radius:50%;font:600 19px/1 inherit;cursor:pointer;flex:none}
 .scr .frame{position:relative;flex:1;min-height:0;display:grid;place-items:center;padding:0 30px}
-.scr .box{position:relative;width:min(86vw,440px);aspect-ratio:1.7;border-radius:18px;
+.scr .box{position:relative;width:min(78vw,380px);aspect-ratio:1;border-radius:22px;
   box-shadow:0 0 0 100vmax rgba(13,11,9,.42)}
 .scr .box i{position:absolute;width:30px;height:30px;border:3px solid var(--gold);border-radius:4px}
 .scr .box i:nth-child(1){top:-2px;left:-2px;border-right:0;border-bottom:0;border-radius:14px 0 0 0}
@@ -472,7 +472,7 @@ class PierceHousehold extends HTMLElement {
         if (want.length){
           const det = new window.BarcodeDetector({formats: want});
           this._dec = {kind:'native', read: async v => {
-            const c = await det.detect(v);
+            const c = await det.detect(v);          // native reads any rotation already
             return c.length ? c[0].rawValue : null;
           }};
           return this._dec;
@@ -496,17 +496,13 @@ class PierceHousehold extends HTMLElement {
     const reader = new window.ZXing.MultiFormatReader();
     reader.setHints(hints);
     const cv = document.createElement('canvas');
-    /* Only the strip inside the viewfinder is decoded: a quarter of the pixels,
-       so it keeps up on a phone, and it cannot read a barcode you did not aim at. */
-    this._dec = {kind:'zxing', read: v => {
-      const vw = v.videoWidth, vh = v.videoHeight;
-      if (!vw || !vh) return null;
-      const w = Math.round(vw * 0.82), h = Math.round(vh * 0.46);
-      const sx = ((vw - w) / 2) | 0, sy = ((vh - h) / 2) | 0;
-      cv.width = w; cv.height = h;
-      const cx = cv.getContext('2d', {willReadFrequently:true});
-      cx.drawImage(v, sx, sy, w, h, 0, 0, w, h);
-      const data = cx.getImageData(0, 0, w, h).data;
+    const cx = () => cv.getContext('2d', {willReadFrequently:true});
+
+    /* 1D readers only sweep horizontal lines, so a can held on its side never
+       decodes. Read the square inside the viewfinder, then read it turned 90°.
+       Nobody should have to rotate the phone to scan a barcode. */
+    const tryDecode = (w, h) => {
+      const data = cx().getImageData(0, 0, w, h).data;
       const lum = new Uint8ClampedArray(w*h);
       for (let i=0, j=0; i<data.length; i+=4, j++)
         lum[j] = (data[i]*0.299 + data[i+1]*0.587 + data[i+2]*0.114) | 0;
@@ -515,6 +511,32 @@ class PierceHousehold extends HTMLElement {
         const bmp = new window.ZXing.BinaryBitmap(new window.ZXing.HybridBinarizer(src));
         return reader.decode(bmp).getText();
       } catch(_) { return null; } finally { reader.reset(); }
+    };
+
+    this._dec = {kind:'zxing', read: src => {
+      const vw = src.videoWidth || src.naturalWidth || src.width;
+      const vh = src.videoHeight || src.naturalHeight || src.height;
+      if (!vw || !vh) return null;
+
+      /* The WHOLE frame, scaled down. Cropping to the viewfinder cut the guard
+         bars off any barcode held close enough to fill it, which is how anybody
+         actually scans a can. Downscaling keeps it quick instead. */
+      const k = Math.min(1, 900 / Math.max(vw, vh));
+      const w = Math.max(1, Math.round(vw * k)), h = Math.max(1, Math.round(vh * k));
+
+      const paint = (rot) => {
+        cv.width  = rot ? h : w;
+        cv.height = rot ? w : h;
+        const g = cv.getContext('2d', {willReadFrequently:true});
+        g.setTransform(1, 0, 0, 1, 0, 0);
+        g.fillStyle = '#fff'; g.fillRect(0, 0, cv.width, cv.height);
+        if (rot){ g.translate(h / 2, w / 2); g.rotate(Math.PI / 2); g.drawImage(src, -w / 2, -h / 2, w, h); }
+        else    { g.drawImage(src, 0, 0, w, h); }
+        g.setTransform(1, 0, 0, 1, 0, 0);
+        return tryDecode(cv.width, cv.height);
+      };
+
+      return paint(false) || paint(true);   // upright, then turned on its side
     }};
     return this._dec;
   }
@@ -544,6 +566,8 @@ class PierceHousehold extends HTMLElement {
         video:{facingMode:{ideal:'environment'}, width:{ideal:1280}, height:{ideal:720}}, audio:false});
       video.srcObject = this._stream;
       await video.play();
+      try { if (screen.orientation && screen.orientation.lock) await screen.orientation.lock('portrait'); }
+      catch(_) { /* iOS Safari refuses; the reader handles rotation instead */ }
     } catch(err){
       this.say('No camera. ' + (err && err.name === 'NotAllowedError'
         ? 'Allow camera access for this page and try again.' : 'This device would not open one.'));
@@ -563,10 +587,19 @@ class PierceHousehold extends HTMLElement {
       this.say('Could not start the barcode reader. ' + (err && err.message || ''));
       this.mark('scanner:fail:decoder:' + (err && err.message || 'unknown')); return;
     }
-    this.say('Point it at a barcode.');
+    this.say('Point it at a barcode. Either way up.');
     this.mark('scanner:ready:' + dec.kind);
 
     this._seen = 0;
+    /* A barcode needs white space around it, so filling the frame never reads.
+       Say so rather than let them keep pushing the can closer. */
+    const t0 = Date.now();
+    this._hint = setInterval(() => {
+      if (!this._scr || this._seen || this._pending) return;
+      const s = (Date.now() - t0) / 1000;
+      if (s > 14) this.say('Still nothing. More light on it usually does it.');
+      else if (s > 6) this.say('Pull back a little — it needs the whole barcode and a white edge.');
+    }, 2000);
     const tick = async () => {
       if (!this._scr) return;
       if (!w.classList.contains('busy')){
@@ -656,6 +689,8 @@ class PierceHousehold extends HTMLElement {
   }
 
   closeScanner(){
+    try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch(_) {}
+    if (this._hint) { clearInterval(this._hint); this._hint = null; }
     if (this._raf) { clearTimeout(this._raf); this._raf = null; }
     if (this._stream) { this._stream.getTracks().forEach(t=>t.stop()); this._stream = null; }
     if (this._scr) { this._scr.remove(); this._scr = null; }
