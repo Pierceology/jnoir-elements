@@ -7,6 +7,7 @@
 
 const CSS = `
 :host, .hh * { box-sizing: border-box; }
+pierce-household, wix-default-custom-element { display:block; }
 .hh{
   --ink:#f7f3ec; --dim:#a9a196; --faint:#6d665b;
   --bg:#17130f; --bg2:#221a15; --card:#241d18; --card2:#2b221c; --line:#3a2f27;
@@ -16,7 +17,6 @@ const CSS = `
     radial-gradient(1000px 620px at 98% 2%, rgba(201,138,224,.14), transparent 58%),
     radial-gradient(760px 520px at 50% 108%, rgba(99,211,160,.07), transparent 62%),
     linear-gradient(180deg, var(--bg2) 0%, var(--bg) 40%, #100d0a 100%);
-  background-attachment:fixed;
   color:var(--ink);
   font:400 16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,system-ui,sans-serif;
   -webkit-font-smoothing:antialiased; text-wrap:pretty;
@@ -26,7 +26,8 @@ const CSS = `
 }
 .hh ::-webkit-scrollbar{width:0;height:0}
 .hh{position:fixed;inset:0;overflow-y:auto;overflow-x:hidden;
-    -webkit-overflow-scrolling:touch;z-index:100000}
+    -webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+    touch-action:pan-y;z-index:100000}
 .wrap{max-width:760px;margin:0 auto;padding:0 20px;position:relative;z-index:1}
 /* depth belongs in the backdrop, never as a veil over the content */
 @media(min-width:1000px){ .wrap{max-width:1140px;padding:0 32px} }
@@ -227,6 +228,7 @@ const MOTION = `
 }`;
 
 const BASE = 'https://pierceology.github.io/jnoir-elements/';
+const BUILD = '11 Sep 14:01';
 
 const SCAN_CSS = `
 .scr{position:fixed;inset:0;z-index:100001;background:#0d0b09;
@@ -406,10 +408,7 @@ class PierceHousehold extends HTMLElement {
     this._fit();
     addEventListener('resize', this._fit);
     addEventListener('orientationchange', () => setTimeout(this._fit, 250));
-    if (window.visualViewport){
-      visualViewport.addEventListener('resize', this._fit);
-      visualViewport.addEventListener('scroll', this._fit);
-    }
+    if (window.visualViewport) visualViewport.addEventListener('resize', this._fit);
     this.addEventListener('input', e => {
       if (!e.target.matches('.find')) return;
       this.filter = e.target.value;
@@ -542,6 +541,28 @@ class PierceHousehold extends HTMLElement {
     return out;
   }
 
+  /* The catalogue is what Stop & Shop sells - packs, not loose cans. Open Food
+     Facts knows the singles, looked up straight by barcode rather than searched. */
+  async world(code){
+    const digits = String(code).replace(/\D/g,'');
+    const tries = [];
+    [digits, this.expandUpcE(digits), digits.replace(/^0+/,'')]
+      .forEach(v => { if (v && !tries.includes(v)) tries.push(v); });
+    for (const u of tries){
+      try {
+        const r = await fetch('https://world.openfoodfacts.org/api/v2/product/' + u +
+          '.json?fields=product_name,brands,image_front_url,quantity');
+        if (!r.ok) continue;
+        const d = await r.json();
+        const q = d && d.product;
+        if (q && (q.product_name || q.brands))
+          return {n:q.product_name || q.brands, b:q.brands || '', s:q.quantity || '',
+                  i:q.image_front_url || '', p:null, a:'', d:'', _src:'world'};
+      } catch(_) {}
+    }
+    return null;
+  }
+
   async catalogue(){
     if (this._cat) return this._cat;
     const r = await fetch(BASE + 'catalog.min.json', {mode:'cors', cache:'force-cache'});
@@ -636,7 +657,7 @@ class PierceHousehold extends HTMLElement {
   async openScanner(){
     if (this._scr) return;
     const title = 'Scan anything';
-    const sub = "I'll tell you what it is, then ask what you're doing with it.";
+    const sub = "I'll tell you what it is, then ask what you're doing with it. · " + BUILD;
     const w = document.createElement('div');
     w.className = 'scr';
     w.innerHTML = `
@@ -695,14 +716,14 @@ class PierceHousehold extends HTMLElement {
       if (!w.classList.contains('busy')){
         let code = null;
         try { code = await dec.read(video); } catch(_) {}
-        if (code && code !== this._lastCode) this.onCode(code, cat);
+        if (code && code !== this._lastCode) await this.onCode(code, cat);
       }
       this._raf = setTimeout(tick, dec.kind === 'native' ? 180 : 240);
     };
     tick();
   }
 
-  onCode(code, cat){
+  async onCode(code, cat){
     const w = this._scr; if (!w) return;
     this._lastCode = code;
     setTimeout(()=>{ if (this._lastCode === code) this._lastCode = null; }, 2200);
@@ -716,6 +737,16 @@ class PierceHousehold extends HTMLElement {
     const card = document.createElement('div');
     card.className = 'hit';
 
+    if (!prod){                                   // the shop list is not the world
+      this.say('Not on the shop list — looking further afield…');
+      card.innerHTML = `<span class="shot"><span>…</span></span>
+        <div class="txt"><b>Looking it up</b><em>${esc(code)}</em></div>`;
+      w.appendChild(card);
+      const far = await this.world(code);
+      if (far){ prod = far; key = this.norm(code)[0] || code; }
+      card.innerHTML = '';
+    }
+
     if (!prod){
       this._pending = {upc: this.norm(code)[0] || code, code, product:null};
       card.innerHTML = `<span class="shot"><span>?</span></span>
@@ -725,7 +756,7 @@ class PierceHousehold extends HTMLElement {
       this.say("Not on the list. Tell me what it is and it'll know next time.");
       this.mark('scan:miss:' + code);
     } else {
-      const aisle = cat.aisles[prod.a] || prod.d || '';
+      const aisle = cat.aisles[prod.a] || prod.d || (prod._src === 'world' ? 'not a shop line' : '');
       this._pending = {upc:key, code, product:prod, aisle,
         aisleOrder: /^\d+$/.test(prod.a) ? 5 : 20 + (parseInt(prod.a,10) || 50)};
       card.innerHTML = `
@@ -741,7 +772,7 @@ class PierceHousehold extends HTMLElement {
       this.say('Which is it?');
       this.mark('scan:hit:' + key);
     }
-    w.appendChild(card);
+    if (!card.parentNode) w.appendChild(card);
     if (!prod){
       this.say('Point it at a barcode.');
       setTimeout(()=>{ if (this._scr) this._scr.classList.remove('busy'); }, 1200);
@@ -1148,7 +1179,8 @@ class PierceHousehold extends HTMLElement {
         <header class="top">
           <div><p class="name">Pierce Household</p><h1 class="h1">${
             this.view === 'money' ? 'Expenses' : 'Dashboard'}</h1></div>
-          <p class="when">${new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}</p>
+          <p class="when">${new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}
+            <br><span style="opacity:.5;font-size:10.5px;letter-spacing:.08em">build ${BUILD}</span></p>
         </header>
         <div class="tabs" role="tablist">${tabs.map(([k,l])=>
           `<button class="tab" role="tab" data-tab="${k}" aria-selected="${this.tab===k}">${l}</button>`).join('')}</div>
