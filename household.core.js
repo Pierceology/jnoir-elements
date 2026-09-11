@@ -9,7 +9,7 @@ var zbarWasm=function(A){"use strict";function I(A,I,g,B){return new(g||(g=Promi
 
 const CSS = `
 :host, .hh * { box-sizing: border-box; }
-pierce-household, wix-default-custom-element { display:block; }
+pierce-household, wix-default-custom-element { display:block; width:100%; overflow:visible; }
 .hh{
   --ink:#f7f3ec; --dim:#a9a196; --faint:#6d665b;
   --bg:#17130f; --bg2:#221a15; --card:#241d18; --card2:#2b221c; --line:#3a2f27;
@@ -28,7 +28,9 @@ pierce-household, wix-default-custom-element { display:block; }
 .hh.money{ padding-bottom:48px;
 }
 .hh ::-webkit-scrollbar{width:0;height:0}
-.hh{position:relative;width:100%;overflow-x:clip}
+/* Full width without leaving the page flow. No transform here on purpose -
+   a transform on this would break the camera overlay's position:fixed. */
+.hh{position:relative;left:50%;width:100vw;margin-left:-50vw;overflow-x:clip}
 .wrap{max-width:760px;margin:0 auto;padding:0 20px;position:relative;z-index:1}
 /* depth belongs in the backdrop, never as a veil over the content */
 @media(min-width:1000px){ .wrap{max-width:1140px;padding:0 32px} }
@@ -229,7 +231,7 @@ const MOTION = `
 }`;
 
 const BASE = 'https://pierceology.github.io/jnoir-elements/';
-const BUILD = '11 Sep 14:37';
+const BUILD = '11 Sep 14:43';
 
 const SCAN_CSS = `
 .scr{position:fixed;inset:0;z-index:100001;background:#0d0b09;
