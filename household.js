@@ -22,14 +22,13 @@ pierce-household, wix-default-custom-element { display:block; }
   color:var(--ink);
   font:400 16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,system-ui,sans-serif;
   -webkit-font-smoothing:antialiased; text-wrap:pretty;
+  min-height:100vh;
   padding:0 0 calc(150px + env(safe-area-inset-bottom));
 }
 .hh.money{ padding-bottom:48px;
 }
 .hh ::-webkit-scrollbar{width:0;height:0}
-.hh{position:fixed;inset:0;overflow-y:auto;overflow-x:hidden;
-    -webkit-overflow-scrolling:touch;overscroll-behavior:contain;
-    touch-action:pan-y;z-index:100000}
+.hh{position:relative;width:100%;overflow-x:clip}
 .wrap{max-width:760px;margin:0 auto;padding:0 20px;position:relative;z-index:1}
 /* depth belongs in the backdrop, never as a veil over the content */
 @media(min-width:1000px){ .wrap{max-width:1140px;padding:0 32px} }
@@ -230,7 +229,7 @@ const MOTION = `
 }`;
 
 const BASE = 'https://pierceology.github.io/jnoir-elements/';
-const BUILD = '11 Sep 14:15';
+const BUILD = '11 Sep 14:37';
 
 const SCAN_CSS = `
 .scr{position:fixed;inset:0;z-index:100001;background:#0d0b09;
@@ -394,18 +393,15 @@ class PierceHousehold extends HTMLElement {
 
     /* Viewport units lie on iOS - 100vh is the window BEHIND Safari's toolbar and
        100dvh did not hold either. Measure what is actually visible and set it. */
+    /* Only the camera overlay needs pinning to the visible viewport. The
+       dashboard itself is ordinary page content, so the page scrolls it and
+       there is no viewport unit left to get wrong. */
     this._fit = () => {
+      if (!this._scr) return;
       const vv = window.visualViewport;
       const h = Math.round((vv && vv.height) || window.innerHeight || 0);
-      if (!h) return;                       // a backgrounded tab reports 0 - keep the last good one
-      const w = Math.round((vv && vv.width) || document.documentElement.clientWidth || 0);
-      this.root.style.height = h + 'px';
-      this.root.style.minHeight = h + 'px';
-      if (w) this.root.style.width = w + 'px';
-      if (this._scr){
-        this._scr.style.height = h + 'px';
-        if (w) this._scr.style.width = w + 'px';
-      }
+      if (!h) return;
+      this._scr.style.height = h + 'px';
     };
     this._fit();
     addEventListener('resize', this._fit);
