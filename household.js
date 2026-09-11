@@ -12,9 +12,11 @@ const CSS = `
   --bg:#17130f; --bg2:#221a15; --card:#241d18; --card2:#2b221c; --line:#3a2f27;
   --gold:#f0b955; --mango:#f2874e; --good:#63d3a0; --warn:#f0b046; --bad:#f0715a; --fav:#c98ae0;
   background:
-    radial-gradient(1100px 600px at 12% -10%, rgba(240,135,78,.16), transparent 62%),
-    radial-gradient(900px 520px at 96% 4%, rgba(201,138,224,.11), transparent 60%),
-    linear-gradient(180deg, var(--bg2) 0%, var(--bg) 44%);
+    radial-gradient(1200px 700px at 14% -12%, rgba(240,135,78,.20), transparent 60%),
+    radial-gradient(1000px 620px at 98% 2%, rgba(201,138,224,.14), transparent 58%),
+    radial-gradient(760px 520px at 50% 108%, rgba(99,211,160,.07), transparent 62%),
+    linear-gradient(180deg, var(--bg2) 0%, var(--bg) 40%, #100d0a 100%);
+  background-attachment:fixed;
   color:var(--ink);
   font:400 16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,system-ui,sans-serif;
   -webkit-font-smoothing:antialiased; text-wrap:pretty;
@@ -25,7 +27,8 @@ const CSS = `
 .hh ::-webkit-scrollbar{width:0;height:0}
 .hh{position:fixed;inset:0;overflow-y:auto;overflow-x:hidden;
     -webkit-overflow-scrolling:touch;z-index:100000}
-.wrap{max-width:760px;margin:0 auto;padding:0 20px}
+.wrap{max-width:760px;margin:0 auto;padding:0 20px;position:relative;z-index:1}
+/* depth belongs in the backdrop, never as a veil over the content */
 @media(min-width:1000px){ .wrap{max-width:1140px;padding:0 32px} }
 
 /* row lists become columns as the screen grows */
@@ -37,10 +40,11 @@ const CSS = `
 .rows.solo{grid-template-columns:minmax(0,1fr)}
 @media(min-width:1000px){ .rows.pair{grid-template-columns:repeat(2,minmax(0,1fr))} }
 
-.top{padding:26px 0 18px;display:flex;align-items:flex-end;justify-content:space-between;gap:16px}
-@media(min-width:820px){ .top{padding:40px 0 24px} .h1{font-size:38px} .when{font-size:13px} }
-.name{font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin:0 0 6px}
-.h1{font-size:clamp(25px,7.4vw,29px);line-height:1.05;letter-spacing:-.02em;margin:0;font-weight:600}
+.top{padding:34px 0 26px;display:flex;align-items:flex-end;justify-content:space-between;gap:16px}
+@media(min-width:820px){ .top{padding:56px 0 30px} .when{font-size:13px} }
+.name{font-size:11.5px;letter-spacing:.34em;text-transform:uppercase;color:var(--gold);margin:0 0 10px;
+  opacity:.85}
+.h1{font-size:clamp(34px,10vw,60px);line-height:.98;letter-spacing:-.035em;margin:0;font-weight:600}
 .when{font-size:12px;color:var(--faint);text-align:right;letter-spacing:.04em;white-space:nowrap}
 
 .tabs{display:flex;gap:4px;overflow-x:auto;padding:4px;background:var(--card);
@@ -58,6 +62,10 @@ const CSS = `
 .grid>*{min-width:0}
 .two{grid-template-columns:repeat(2,1fr)}
 .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+.stats > :first-child{grid-column:1 / -1;padding:24px}
+.stats > :first-child .big{font-size:clamp(44px,15vw,68px)}
+@media(min-width:820px){ .stats > :first-child{grid-column:auto;padding:17px 18px}
+  .stats > :first-child .big{font-size:clamp(23px,7.2vw,31px)} }
 @media(min-width:820px){ .stats{grid-template-columns:repeat(4,minmax(0,1fr))} }
 @media(min-width:620px){.three{grid-template-columns:repeat(3,1fr)}}
 
@@ -86,9 +94,10 @@ const CSS = `
 .sub{font-size:12.5px;color:var(--dim);margin:7px 0 0}
 .gold{color:var(--gold)} .good{color:var(--good)} .bad{color:var(--bad)} .warn{color:var(--warn)}
 
-.sect{margin:26px 0 0}
+.sect{margin:38px 0 0}
 .sect h2{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);
-  margin:0 0 11px;font-weight:600;display:flex;justify-content:flex-start;align-items:center;gap:0}
+  margin:0 0 14px;font-weight:600;display:flex;justify-content:flex-start;align-items:center;gap:0;
+  font-size:12.5px;letter-spacing:.2em}
 .sect h2 > span{margin-left:auto}
 .sect h2 span{color:var(--faint);font-weight:400;letter-spacing:.04em;text-transform:none;font-size:12px}
 
@@ -277,6 +286,28 @@ const SCAN_CSS = `
   border:1px solid var(--line);border-radius:11px;background:#2b221c;color:var(--ink);
   font:600 13px/1 inherit;padding:8px 10px}
 .who-pick .av{width:28px;height:28px;border-radius:8px}
+
+.hero{display:flex;align-items:center;gap:18px;margin:6px 0 26px}
+.hero .av{width:88px;height:88px;border-radius:24px}
+.hero h2{margin:0;font-size:clamp(30px,9vw,46px);line-height:1;letter-spacing:-.03em;font-weight:600}
+.hero p{margin:8px 0 0;font-size:13px;color:var(--dim)}
+.back{appearance:none;border:1px solid var(--line);background:var(--card);color:var(--dim);
+  border-radius:99px;font:600 13px/1 inherit;padding:10px 16px;cursor:pointer;margin:4px 0 0}
+.back:active{transform:scale(.96)}
+.favs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media(min-width:620px){ .favs{grid-template-columns:repeat(3,minmax(0,1fr))} }
+@media(min-width:1000px){ .favs{grid-template-columns:repeat(4,minmax(0,1fr))} }
+.fav{background:linear-gradient(165deg,var(--card2),var(--card));border:1px solid var(--line);
+  border-radius:16px;padding:12px;min-width:0}
+.fav .shelf{aspect-ratio:1;border-radius:11px;overflow:hidden;background:#fff;display:grid;place-items:center}
+.fav .shelf img{width:100%;height:100%;object-fit:contain}
+.fav .shelf span{width:100%;height:100%;display:grid;place-items:center;font:700 30px/1 inherit;
+  color:var(--acc,#f0b955);background:color-mix(in srgb,var(--acc,#f0b955) 15%,#2b221c)}
+.fav b{display:block;font-size:13px;font-weight:600;margin-top:10px;line-height:1.3;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.fav em{display:block;font-style:normal;font-size:11.5px;color:var(--dim);margin-top:4px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card.tap{cursor:pointer}
 .hit .tick.up{background:rgba(99,211,160,.15);color:var(--good)}
 .hit .tick.dn{background:rgba(240,176,70,.15);color:var(--warn)}
 .hit .tick.no{background:rgba(240,113,90,.15);color:var(--bad)}
@@ -333,6 +364,7 @@ class PierceHousehold extends HTMLElement {
     this.favPerson = null;
     this.filter = '';
     this.groupBy = 'aisle';
+    this.person = null;
     this.view = this.getAttribute('hh-view') === 'money' ? 'money' : 'house';
     this.tab = this.view === 'money' ? 'overview' : 'today';
     this.data = this.data || {items:[],spend:[],subs:[],people:[],pets:[]};
@@ -391,6 +423,10 @@ class PierceHousehold extends HTMLElement {
   onClick(e){
     const tab = e.target.closest('[data-tab]');
     if (tab){ this.tab = tab.dataset.tab; this.render(); return; }
+
+    const open = e.target.closest('[data-person]');
+    if (open && !e.target.closest('[data-fav]')){ this.person = open.dataset.person; this.render(); return; }
+    if (e.target.closest('[data-back]')){ this.person = null; this.render(); return; }
 
     const g = e.target.closest('[data-groupby]');
     if (g){ this.groupBy = g.dataset.groupby; this.render(); this.mark('groupby:'+this.groupBy); return; }
@@ -876,13 +912,45 @@ class PierceHousehold extends HTMLElement {
           <span class="amt">${P(+s.amount||0)}</span></div>`;}).join('')}</div></div>`;
   }
 
+  personView(){
+    const p = (this.data.people||[]).find(x => x.title === this.person);
+    if (!p) { this.person = null; return this.us(); }
+    const fav = String(p.favourites||'').split(',').map(x=>x.trim()).filter(Boolean);
+    const items = this.data.items||[];
+    const shelf = name => {
+      const n = name.toLowerCase();
+      return items.find(i => (i.title||'').toLowerCase() === n)
+          || items.find(i => (i.title||'').toLowerCase().includes(n) || n.includes((i.title||'').toLowerCase()));
+    };
+    const no = String(p.avoid||'').split(',').map(x=>x.trim()).filter(Boolean);
+    return `
+      <button class="back" data-back>&larr; Everyone</button>
+      <div class="hero"><span class="av">${faceFor('human', p.sex, p.accent)}</span>
+        <div><h2>${esc(p.title)}</h2>
+          <p>${fav.length ? `${fav.length} favourite${fav.length===1?'':'s'}` : 'Nothing on file yet'}</p></div>
+      </div>
+      ${fav.length ? `<div class="favs">${fav.map(f=>{
+        const it = shelf(f);
+        const acc = it ? AISLE_COLOR(it) : (p.accent||'#f0b955');
+        return `<div class="fav" style="--acc:${acc}">
+          <span class="shelf">${it && it.image ? `<img src="${esc(it.image)}" alt="" loading="lazy">`
+                                               : `<span>${esc(f.trim()[0]||'?')}</span>`}</span>
+          <b>${esc(f)}</b><em>${esc(it ? (it.aisle || it.category || '') : 'not in the cupboard')}</em>
+        </div>`;}).join('')}</div>`
+      : `<div class="card"><p class="empty">Nothing yet. Hit Scan an item, show it something
+          ${esc(p.title.split(' ')[0])} loves, and choose Favourite.</p></div>`}
+      ${no.length ? `<div class="sect"><h2>Never buy</h2><div class="chips">${
+        no.map(f=>`<span class="chip">${esc(f)}</span>`).join('')}</div></div>` : ''}`;
+  }
+
   us(){
+    if (this.person) return this.personView();
     const people = (this.data.people||[]).slice().sort((a,b)=>(+a.sortOrder||0)-(+b.sortOrder||0));
     return `<div class="grid three">${people.map(p=>{
       const fav = String(p.favourites||'').split(',').map(s=>s.trim()).filter(Boolean);
       const no  = String(p.avoid||'').split(',').map(s=>s.trim()).filter(Boolean);
       const armed = this.mode==='fav' && this.favPerson===p.title;
-      return `<div class="card">
+      return `<div class="card tap" data-person="${esc(p.title)}">
         <div class="who"><span class="av">${faceFor('human', p.sex, p.accent)}</span>
           <div><p class="rt">${esc(p.title)}</p>
             <p class="rs">${fav.length} favourite${fav.length===1?'':'s'}</p></div></div>
