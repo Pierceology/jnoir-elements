@@ -89,8 +89,8 @@ pierce-household, wix-default-custom-element { display:block; width:100%; overfl
 .thumb{width:46px;height:46px;border-radius:12px;flex:none;overflow:hidden;position:relative;
   background:#fff;border:1px solid var(--line);display:grid;place-items:center}
 .thumb img{width:100%;height:100%;object-fit:contain;background:#fff;display:block}
-.thumb .ltr{font:700 17px/1 inherit;width:100%;height:100%;display:grid;place-items:center;
-  color:#fff;background:var(--acc)}
+.thumb .ltr{font:400 23px/1 inherit;width:100%;height:100%;display:grid;place-items:center;
+  background:color-mix(in srgb,var(--acc) 16%,#fff)}
 .row.item{gap:11px;padding:12px 13px}
 .row.item .rs{font-size:11.5px}
 .klabel{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin:0 0 9px}
@@ -203,6 +203,24 @@ const CAT_TINT = {
 };
 /* a real aisle label carries its department after the dot - colour by that */
 const AISLE_TINT = {};
+
+/* When there is no photograph anywhere, say what KIND of thing it is rather
+   than showing its first letter, which tells nobody anything. */
+const CAT_GLYPH = {
+  'Produce':'\u{1F96C}', 'Bread & Bakery':'\u{1F35E}', 'Deli & Prepared Food':'\u{1F96A}',
+  'Meat':'\u{1F969}', 'Seafood':'\u{1F41F}', 'Dairy & Eggs':'\u{1F95B}', 'Frozen':'\u{1F9CA}',
+  'Soups & Canned Goods':'\u{1F96B}', 'Rice, Pasta & Beans':'\u{1F35D}', 'Breakfast':'\u{1F963}',
+  'Baking & Cooking':'\u{1F9C2}', 'Condiments & Sauces':'\u{1F36F}', 'Beverages':'\u{1F964}',
+  'Snacks':'\u{1F36A}', 'Candy & Chocolate':'\u{1F36B}', 'Pets':'\u{1F43E}', 'Baby':'\u{1F37C}',
+  'Health & Beauty':'\u{1F9F4}', 'Office, Home & Garden':'\u{1F9F9}', 'Household':'\u{1F9F9}',
+  'Other':'\u{1F4E6}', 'Unfiled':'\u{1F4E6}'
+};
+const glyphFor = i => {
+  if (!i) return CAT_GLYPH.Other;
+  const a = String(i.aisle || '');
+  const dept = a.includes('\u00B7') ? a.split('\u00B7').pop().replace(/\(likely\)/,'').trim() : a.trim();
+  return CAT_GLYPH[dept] || CAT_GLYPH[i.category] || CAT_GLYPH.Other;
+};
 const AISLE_COLOR = i => {
   if (!i) return '#ff5c8a';
   const a = String(i.aisle || '');
@@ -231,7 +249,7 @@ const MOTION = `
 }`;
 
 const BASE = 'https://pierceology.github.io/jnoir-elements/';
-const BUILD = '11 Sep 14:49';
+const BUILD = '11 Sep 15:06';
 
 const SCAN_CSS = `
 .scr{position:fixed;inset:0;z-index:100001;background:#0d0b09;
@@ -321,8 +339,8 @@ const SCAN_CSS = `
   border-radius:18px;padding:12px;min-width:0}
 .fav .shelf{aspect-ratio:1;border-radius:11px;overflow:hidden;background:#fff;display:grid;place-items:center}
 .fav .shelf img{width:100%;height:100%;object-fit:contain}
-.fav .shelf span{width:100%;height:100%;display:grid;place-items:center;font:700 30px/1 inherit;
-  color:#fff;background:var(--acc,#ff5c8a)}
+.fav .shelf span{width:100%;height:100%;display:grid;place-items:center;font:400 40px/1 inherit;
+  background:color-mix(in srgb,var(--acc,#ff5c8a) 16%,#fff)}
 .fav b{display:block;font-size:13px;font-weight:600;margin-top:10px;line-height:1.3;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .fav em{display:block;font-style:normal;font-size:11.5px;color:var(--dim);margin-top:4px;
@@ -899,8 +917,8 @@ class PierceHousehold extends HTMLElement {
     const img = (i.image||'').trim();
     const thumb = img
       ? `<span class="thumb"><img src="${esc(img)}" alt="" loading="lazy"
-           onerror="this.parentNode.innerHTML='<span class=&quot;ltr&quot;>${esc(i.title.trim()[0]||'?')}</span>'"></span>`
-      : `<span class="thumb"><span class="ltr">${esc(i.title.trim()[0]||'?')}</span></span>`;
+           onerror="this.parentNode.innerHTML='<span class=&quot;ltr&quot;>${glyphFor(i)}</span>'"></span>`
+      : `<span class="thumb"><span class="ltr">${glyphFor(i)}</span></span>`;
     return `<div class="row item" style="--acc:${AISLE_COLOR(i)}">${thumb}
       <div class="grow">
         <p class="rt">${esc(i.title)}</p>
@@ -1067,7 +1085,7 @@ class PierceHousehold extends HTMLElement {
         const acc = it ? AISLE_COLOR(it) : (p.accent||'#f0b955');
         return `<div class="fav" style="--acc:${acc}">
           <span class="shelf">${it && it.image ? `<img src="${esc(it.image)}" alt="" loading="lazy">`
-                                               : `<span>${esc(f.trim()[0]||'?')}</span>`}</span>
+                                               : `<span>${it ? glyphFor(it) : '\u{1F4E6}'}</span>`}</span>
           <b>${esc(f)}</b><em>${esc(it ? (it.aisle || it.category || '') : 'not in the cupboard')}</em>
         </div>`;}).join('')}</div>`
       : `<div class="card"><p class="empty">Nothing yet. Hit Scan an item, show it something
