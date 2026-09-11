@@ -1,0 +1,33 @@
+{
+  "_": "The building. Add a floor by adding a row and pushing — no editor, no Publish, no new page.",
+  "_kinds": "element = load a script then place its tag | frame = an iframe of something already live | html = inline markup",
+  "building": "J.NOIR",
+  "floors": [
+    {
+      "n": 1,
+      "name": "Lobby",
+      "slug": "lobby",
+      "icon": "🛗",
+      "kind": "html",
+      "html": "<div class='lobby'><h1>The Elevator</h1><p>Everything made here since the first line of code, on its own floor. Press a number.</p></div>"
+    },
+    {
+      "n": 2,
+      "name": "Pierce Household",
+      "slug": "house",
+      "icon": "🏠",
+      "kind": "element",
+      "tag": "pierce-household",
+      "src": "https://pierceology.github.io/jnoir-elements/household.js",
+      "note": "needs the CMS; the page code feeds it"
+    },
+    {
+      "n": 3,
+      "name": "Drive Winthrop",
+      "slug": "winthrop",
+      "icon": "🚗",
+      "kind": "frame",
+      "url": "https://pierceology.github.io/winthrop-drive/"
+    }
+  ]
+}
