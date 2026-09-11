@@ -435,6 +435,13 @@ class PierceHousehold extends HTMLElement {
 
   mark(v){ this.setAttribute('hh-state', v); }
 
+  /* One door out. The page just passes these through, which is why nothing on
+     the Wix side has to change again when something new is built here. */
+  ask(op, payload, reload){
+    this.dispatchEvent(new CustomEvent('hh-do',{bubbles:true,detail:{op, payload, reload:!!reload}}));
+  }
+  reload(){ this.dispatchEvent(new CustomEvent('hh-reload',{bubbles:true})); }
+
   onClick(e){
     const tab = e.target.closest('[data-tab]');
     if (tab){ this.tab = tab.dataset.tab; this.render(); return; }
@@ -474,7 +481,8 @@ class PierceHousehold extends HTMLElement {
       this.render();
       const q = this.root.querySelector(`[data-step][data-id="${it._id}"]`)?.parentNode?.querySelector('.qty');
       if (q) { q.classList.add('bump'); setTimeout(()=>q.classList.remove('bump'), 360); }
-      this.dispatchEvent(new CustomEvent('hh-qty',{detail:{id:it._id,qty:it.qty},bubbles:true}));
+      this.ask('patch', {collection:'HouseholdItems', id:it._id,
+        fields:{qty:it.qty, lastScan:new Date().toISOString()}});
       this.mark(`qty:${it._id}:${it.qty}`);
       return;
     }
@@ -768,7 +776,8 @@ class PierceHousehold extends HTMLElement {
     const p = this._pending; if (!p) return;
     const it = (this.data.items||[]).find(x => x._id === id); if (!it) return;
     it.upc = p.upc;
-    this.dispatchEvent(new CustomEvent('hh-bind',{bubbles:true,detail:{id, upc:p.upc, code:p.code}}));
+    this.ask('patch', {collection:'HouseholdItems', id,
+      fields:{upc:p.upc, notes:((it.notes||'') + ' Barcode ' + p.upc + ' learned by scan.').trim()}});
     const card = this._scr.querySelector('.hit');
     const slot = card.querySelector('.mine');
     if (slot) slot.outerHTML = `<span class="tick wide up">learned &mdash; scan it again to count it</span>`;
@@ -804,14 +813,51 @@ class PierceHousehold extends HTMLElement {
     const tail = card.querySelector('.ask') || card.querySelector('.who-pick');
     if (tail) tail.outerHTML = `<span class="tick wide ${cls}">${esc(word)}</span>`;
 
-    this.dispatchEvent(new CustomEvent('hh-scanned',{bubbles:true,
-      detail:Object.assign({mode, person: person || null}, p)}));
+    this.commit(mode, person, p);
     this._seen = (this._seen||0) + 1;
     this._pending = null;
     this.mark('scan:' + mode + ':' + p.upc);
     this.say(`${this._seen} done. Next one.`);
     if (navigator.vibrate) { try { navigator.vibrate([10,40,10]); } catch(_) {} }
     if (this._scr) this._scr.classList.remove('busy');
+  }
+
+  /* What a scan means, worked out here where a push is the whole deployment. */
+  commit(mode, person, p){
+    const items = this.data.items || [];
+
+    if (mode === 'fav'){
+      const who = (this.data.people||[]).find(w => w.title === person);
+      if (!who) return;
+      const name = (p.product && p.product.n) || p.upc;
+      const have = String(who.favourites||'').split(',').map(x=>x.trim()).filter(Boolean);
+      if (!have.some(f => f.toLowerCase() === name.toLowerCase())) have.push(name);
+      who.favourites = have.join(', ');
+      this.ask('patch', {collection:'HouseholdPeople', id:who._id, fields:{favourites:who.favourites}});
+      return;
+    }
+
+    const found = items.find(i => (i.upc||'') === p.upc);
+    if (found){
+      const step = mode === 'out' ? -1 : 1;
+      found.qty = Math.max(0, Math.round((((+found.qty)||0) + step) * 100) / 100);
+      this.ask('patch', {collection:'HouseholdItems', id:found._id,
+        fields:{qty:found.qty, lastScan:new Date().toISOString()}});
+      return;
+    }
+
+    if (mode === 'out') return;                 // cannot take out what was never here
+    const prod = p.product || {};
+    const made = {
+      title: prod.n || ('Barcode ' + p.upc), brand: prod.b || '', unit: prod.s || '',
+      qty: 1, par: 0, category: prod.d || 'Other', aisle: p.aisle || prod.d || 'Unfiled',
+      aisleOrder: Number(p.aisleOrder) || 50, location: 'Kitchen', upc: p.upc,
+      image: prod.i || '', lastPrice: prod.p == null ? null : Number(prod.p),
+      lastStore: 'Stop & Shop · Furlong Dr', lastScan: new Date().toISOString(),
+      notes: 'Made by a scan, ' + new Date().toISOString().slice(0,10) + '.'
+    };
+    items.push(made);
+    this.ask('insert', {collection:'HouseholdItems', item:made}, true);
   }
 
   closeScanner(){
@@ -822,7 +868,7 @@ class PierceHousehold extends HTMLElement {
     if (this._scr) { this._scr.remove(); this._scr = null; }
     this._lastCode = null;
     this.mark('scanner:closed:' + (this._seen||0));
-    this.dispatchEvent(new CustomEvent('hh-scan-done',{bubbles:true,detail:{count:this._seen||0}}));
+    if (this._seen) this.reload();
   }
 
   /* ---------- derived ---------- */
