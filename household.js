@@ -271,8 +271,10 @@ const SCAN_CSS = `
 .hit{flex-wrap:wrap}
 .hit .tick{font:700 12px/1 inherit;letter-spacing:.08em;text-transform:uppercase;
   padding:7px 11px;border-radius:99px;white-space:nowrap;flex:none}
-.tick.wide{flex:0 0 100%;text-align:center;margin-top:4px;padding:10px}
-.ask{flex:0 0 100%;display:flex;gap:7px;margin-top:2px}
+.tick.wide{flex:0 0 100%;min-width:0;max-width:100%;text-align:center;margin-top:4px;padding:10px;
+  white-space:normal;line-height:1.35}
+.ask{flex:0 0 100%;min-width:0;max-width:100%;display:flex;gap:7px;margin-top:2px}
+.ask button{min-width:0}
 .ask button{flex:1;appearance:none;border:1px solid var(--line);border-radius:11px;cursor:pointer;
   background:#2b221c;color:var(--ink);font:600 13px/1.15 inherit;padding:11px 6px;
   transition:transform .14s,background .14s,border-color .14s}
@@ -281,11 +283,24 @@ const SCAN_CSS = `
 .ask button[data-act="in"]{border-color:rgba(99,211,160,.45)}
 .ask button[data-act="out"]{border-color:rgba(240,176,70,.45)}
 .ask button[data-act="fav"]{border-color:rgba(201,138,224,.45)}
-.who-pick{flex:0 0 100%;display:flex;flex-wrap:wrap;gap:7px;margin-top:2px}
+.who-pick{flex:0 0 100%;min-width:0;max-width:100%;display:flex;flex-wrap:wrap;gap:7px;margin-top:2px}
 .who-pick button{flex:1 1 44%;display:flex;align-items:center;gap:8px;appearance:none;cursor:pointer;
   border:1px solid var(--line);border-radius:11px;background:#2b221c;color:var(--ink);
   font:600 13px/1 inherit;padding:8px 10px}
 .who-pick .av{width:28px;height:28px;border-radius:8px}
+.mine{flex:0 0 100%;margin-top:4px;min-width:0;max-width:100%}
+.mine ul,.mine li{min-width:0;max-width:100%}
+.mine button{max-width:100%}
+.mine input{width:100%;appearance:none;background:#2b221c;border:1px solid var(--line);
+  border-radius:11px;color:var(--ink);font:400 14px/1 inherit;padding:12px 13px}
+.mine input::placeholder{color:var(--faint)}
+.mine ul{list-style:none;margin:8px 0 0;padding:0;max-height:190px;overflow-y:auto}
+.mine li{margin-bottom:6px}
+.mine button{width:100%;display:flex;align-items:center;gap:10px;appearance:none;cursor:pointer;
+  border:1px solid var(--line);border-radius:11px;background:#2b221c;color:var(--ink);
+  font:600 13px/1.25 inherit;padding:9px 10px;text-align:left}
+.mine button img{width:30px;height:30px;border-radius:7px;object-fit:contain;background:#fff;flex:none}
+.mine button span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 .hero{display:flex;align-items:center;gap:18px;margin:6px 0 26px}
 .hero .av{width:88px;height:88px;border-radius:24px}
@@ -467,7 +482,10 @@ class PierceHousehold extends HTMLElement {
     if (e.target.closest('[data-close-scan]')){ this.closeScanner(); return; }
 
     const act = e.target.closest('[data-act]');
-    if (act){ this.decide(act.dataset.act); return; }
+    if (act){ act.dataset.act === 'mine' ? this.pickMine() : this.decide(act.dataset.act); return; }
+
+    const bind = e.target.closest('[data-bind]');
+    if (bind){ this.bindTo(bind.dataset.bind); return; }
 
     const pick = e.target.closest('[data-pick]');
     if (pick){ this.decide('fav', pick.dataset.pick); return; }
@@ -481,11 +499,38 @@ class PierceHousehold extends HTMLElement {
   }
 
   /* ---------- the scanner ---------- */
+  /* A single can carries UPC-E: eight digits, zero-suppressed. It has to be
+     expanded back to the twelve-digit UPC-A before anything will match it. */
+  expandUpcE(e){
+    const d = String(e).replace(/\D/g,'');
+    let n, x;
+    if (d.length === 8){ n = d[0]; x = d.slice(1,7); }
+    else if (d.length === 6){ n = '0'; x = d; }
+    else return null;
+    if (n !== '0' && n !== '1') return null;
+    const last = x[5];
+    let body;
+    if ('012'.includes(last)) body = x.slice(0,2) + last + '0000' + x.slice(2,5);
+    else if (last === '3')    body = x.slice(0,3) + '00000' + x.slice(3,5);
+    else if (last === '4')    body = x.slice(0,4) + '00000' + x[4];
+    else                      body = x.slice(0,5) + '0000' + last;
+    const a = n + body;
+    const dig = [...a].map(Number);
+    const sum = dig.filter((_,i)=>i%2===0).reduce((p,q)=>p+q,0)*3
+              + dig.filter((_,i)=>i%2===1).reduce((p,q)=>p+q,0);
+    return a + String((10 - sum % 10) % 10);
+  }
+
   norm(code){
     const d = String(code).replace(/\D/g,'');
+    const seeds = [d];
+    const wide = this.expandUpcE(d);
+    if (wide) seeds.push(wide);
     const out = [];
-    [d, d.replace(/^0+/,''), d.slice(0,-1), d.slice(0,-1).replace(/^0+/,'')]
-      .forEach(v => { const k = v.replace(/^0+/,'') || v; if (k && !out.includes(k)) out.push(k); });
+    seeds.forEach(v => {
+      [v, v.replace(/^0+/,''), v.slice(0,-1), v.slice(0,-1).replace(/^0+/,'')]
+        .forEach(k => { const q = k.replace(/^0+/,'') || k; if (q && !out.includes(q)) out.push(q); });
+    });
     return out;
   }
 
@@ -528,7 +573,8 @@ class PierceHousehold extends HTMLElement {
     const hints = new Map();
     const F = window.ZXing.BarcodeFormat;
     hints.set(window.ZXing.DecodeHintType.POSSIBLE_FORMATS,
-      [F.UPC_A, F.EAN_13, F.UPC_E, F.EAN_8, F.CODE_128]);
+      [F.UPC_A, F.EAN_13, F.UPC_E, F.EAN_8, F.CODE_128, F.CODE_39, F.ITF]);
+    hints.set(window.ZXing.DecodeHintType.TRY_HARDER, true);
     const reader = new window.ZXing.MultiFormatReader();
     reader.setHints(hints);
     const cv = document.createElement('canvas');
@@ -557,7 +603,7 @@ class PierceHousehold extends HTMLElement {
       /* The WHOLE frame, scaled down. Cropping to the viewfinder cut the guard
          bars off any barcode held close enough to fill it, which is how anybody
          actually scans a can. Downscaling keeps it quick instead. */
-      const k = Math.min(1, 900 / Math.max(vw, vh));
+      const k = Math.min(1, 1280 / Math.max(vw, vh));
       const w = Math.max(1, Math.round(vw * k)), h = Math.max(1, Math.round(vh * k));
 
       const paint = (rot) => {
@@ -663,10 +709,12 @@ class PierceHousehold extends HTMLElement {
     card.className = 'hit';
 
     if (!prod){
+      this._pending = {upc: this.norm(code)[0] || code, code, product:null};
       card.innerHTML = `<span class="shot"><span>?</span></span>
-        <div class="txt"><b>Not in the store catalogue</b>
-          <em>${esc(code)} — add it by hand and the next scan will know it.</em></div>
-        <span class="tick no">unknown</span>`;
+        <div class="txt"><b>Not on the store's list</b>
+          <em>${esc(code)} — single cans and singles out of a pack usually aren't.</em></div>
+        <div class="ask"><button data-act="mine">It's one of ours<b>PICK IT</b></button></div>`;
+      this.say("Not on the list. Tell me what it is and it'll know next time.");
       this.mark('scan:miss:' + code);
     } else {
       const aisle = cat.aisles[prod.a] || prod.d || '';
@@ -690,6 +738,48 @@ class PierceHousehold extends HTMLElement {
       this.say('Point it at a barcode.');
       setTimeout(()=>{ if (this._scr) this._scr.classList.remove('busy'); }, 1200);
     }
+  }
+
+  /* A can out of a 24-pack has its own barcode the shop never sells. Point it at
+     something already in the house and it is known from then on. */
+  pickMine(filter){
+    const card = this._scr && this._scr.querySelector('.hit'); if (!card) return;
+    const q = String(filter||'').trim().toLowerCase();
+    const items = (this.data.items||[])
+      .filter(i => !q || (i.title||'').toLowerCase().includes(q))
+      .slice(0, 40);
+    const list = items.map(i => `<li><button data-bind="${esc(i._id)}">${
+        i.image ? `<img src="${esc(i.image)}" alt="">` : ''}<span>${esc(i.title)}</span></button></li>`).join('')
+      || `<li><p class="empty">Nothing matches that.</p></li>`;
+    const slot = card.querySelector('.ask') || card.querySelector('.mine');
+    const html = `<div class="mine"><input placeholder="Which one is it?" value="${esc(filter||'')}">
+      <ul>${list}</ul></div>`;
+    if (slot) slot.outerHTML = html;
+    const box = card.querySelector('.mine input');
+    if (box){
+      box.oninput = () => { const v = box.value; this.pickMine(v);
+        const nb = this._scr.querySelector('.mine input'); if (nb){ nb.focus(); nb.setSelectionRange(v.length,v.length); } };
+      if (filter === undefined) box.focus();
+    }
+    this.say('Pick what it is.');
+  }
+
+  bindTo(id){
+    const p = this._pending; if (!p) return;
+    const it = (this.data.items||[]).find(x => x._id === id); if (!it) return;
+    it.upc = p.upc;
+    this.dispatchEvent(new CustomEvent('hh-bind',{bubbles:true,detail:{id, upc:p.upc, code:p.code}}));
+    const card = this._scr.querySelector('.hit');
+    const slot = card.querySelector('.mine');
+    if (slot) slot.outerHTML = `<span class="tick wide up">learned &mdash; scan it again to count it</span>`;
+    const b = card.querySelector('.txt b'); if (b) b.textContent = it.title;
+    const em = card.querySelector('.txt em');
+    if (em) em.textContent = 'barcode ' + p.upc + ' now belongs to this';
+    this._pending = null;
+    this.mark('scan:bound:' + p.upc + ':' + id);
+    this.say('Learned. Scan it again to count it.');
+    if (navigator.vibrate) { try { navigator.vibrate([10,40,10]); } catch(_) {} }
+    if (this._scr) this._scr.classList.remove('busy');
   }
 
   /* the answer to "adding or leaving?" — nothing is written until this runs */
@@ -796,10 +886,6 @@ class PierceHousehold extends HTMLElement {
           <p class="sub">${floors.size} location${floors.size===1?'':'s'}</p></div>
         <div class="card"><p class="klabel">Running low</p><p class="big ${low.length?'warn':''}" data-to="${low.length}">${low.length}</p>
           <p class="sub">${low.length?'need replacing':'all above par'}</p></div>
-        <div class="card"><p class="klabel">Animals</p><p class="big" data-to="${pets}">${pets}</p>
-          <p class="sub">${(this.data.pets||[]).filter(p=>!p.food).length} with no food on file</p></div>
-        <div class="card"><p class="klabel">Not scanned</p><p class="big" data-to="${noUpc}">${noUpc}</p>
-          <p class="sub">no barcode yet</p></div>
       </div>
       <div class="sect"><h2>Running low${low.length?`<span>${low.length}</span>`:''}</h2>${
         low.length ? `<div class="rows">${low.map(i=>this.itemRow(i)).join('')}</div>`
@@ -870,11 +956,6 @@ class PierceHousehold extends HTMLElement {
           `<button class="gb" role="tab" data-groupby="${k}" aria-selected="${this.groupBy===k}">${l}</button>`).join('')}</div>
         <input class="find" placeholder="Find anything — ${n} items" value="${esc(this.filter)}">
       </div>
-      ${this.groupBy==='aisle' ? `<p class="rs" style="margin:-6px 0 16px">Aisles come from the real
-        Stop &amp; Shop on Furlong Drive. Ones marked <em>likely</em> are where that department lives,
-        not that exact product — correct any of them and it sticks.</p>` : ''}
-      ${noUpc ? `<p class="rs" style="margin:-6px 0 16px">${noUpc} of ${n} have no barcode yet.
-        The first scan of anything binds its UPC for good.</p>` : ''}
       <div id="kitchenBody">${this.kitchenBody()}</div>`;
   }
 
