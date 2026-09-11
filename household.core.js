@@ -249,7 +249,7 @@ const MOTION = `
 }`;
 
 const BASE = 'https://pierceology.github.io/jnoir-elements/';
-const BUILD = '11 Sep 15:06';
+const BUILD = '11 Sep 15:09';
 
 const SCAN_CSS = `
 .scr{position:fixed;inset:0;z-index:100001;background:#0d0b09;
@@ -425,6 +425,19 @@ class PierceHousehold extends HTMLElement {
     };
     this._fit();
     addEventListener('resize', this._fit);
+
+    /* This page belongs to the dashboard. The site header is already removed in
+       the editor; the footer is the last 58px of somebody else's furniture and
+       the editor would not let me near it. Scoped to this page because this
+       element only exists on this page, and reversible by deleting these lines. */
+    const tidy = () => {
+      document.querySelectorAll('footer, [id*="FOOTER" i]').forEach(n => {
+        if (!this.contains(n) && n.offsetParent !== null) n.style.display = 'none';
+      });
+    };
+    tidy();
+    setTimeout(tidy, 800);
+    setTimeout(tidy, 2500);
     addEventListener('orientationchange', () => setTimeout(this._fit, 250));
     if (window.visualViewport) visualViewport.addEventListener('resize', this._fit);
     this.addEventListener('input', e => {
