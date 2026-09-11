@@ -249,7 +249,7 @@ const MOTION = `
 }`;
 
 const BASE = 'https://pierceology.github.io/jnoir-elements/';
-const BUILD = '11 Sep 15:11';
+const BUILD = '11 Sep 15:21';
 
 const SCAN_CSS = `
 .scr{position:fixed;inset:0;z-index:100001;background:#0d0b09;
@@ -434,6 +434,11 @@ class PierceHousehold extends HTMLElement {
       document.querySelectorAll('footer, [id*="FOOTER" i]').forEach(n => {
         if (!this.contains(n) && n.offsetParent !== null) n.style.display = 'none';
       });
+      /* Removing the header left ~300px of empty page above us. Measure the gap
+         and close it, rather than guessing at somebody else's padding. */
+      this.root.style.marginTop = '0px';
+      const gap = Math.round(this.getBoundingClientRect().top + window.scrollY);
+      if (gap > 2) this.root.style.marginTop = (-gap) + 'px';
     };
     tidy();
     setTimeout(tidy, 800);
