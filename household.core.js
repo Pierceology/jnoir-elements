@@ -46,6 +46,11 @@ pierce-household, wix-default-custom-element { display:block; width:100%; overfl
 @media(min-width:1000px){ .rows.pair{grid-template-columns:repeat(2,minmax(0,1fr))} }
 
 .top{padding:34px 0 26px;display:flex;align-items:flex-end;justify-content:space-between;gap:16px}
+.brandline{display:flex;align-items:center;gap:15px;min-width:0}
+.crest{width:56px;height:56px;border-radius:19px;overflow:hidden;flex:none;
+  border:2px solid #fff;box-shadow:var(--shadow);background:#f4f1fb}
+.crest img{width:100%;height:100%;object-fit:cover;display:block}
+@media(max-width:420px){ .crest{width:46px;height:46px;border-radius:15px} }
 @media(min-width:820px){ .top{padding:56px 0 30px} .when{font-size:13px} }
 .name{font-size:11.5px;letter-spacing:.34em;text-transform:uppercase;color:var(--gold);margin:0 0 10px;
   opacity:.85}
@@ -157,6 +162,7 @@ pierce-household, wix-default-custom-element { display:block; width:100%; overfl
 .av{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;
   font:700 14px/1 inherit;color:#17131f;flex:none;overflow:hidden;background:#f4f1fb}
 .av svg{width:100%;height:100%;display:block}
+.av img{width:100%;height:100%;display:block;object-fit:cover}
 .pill.sex{background:#2b221c;color:var(--dim)}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
 .chip{font-size:12.5px;padding:5px 11px;border-radius:99px;background:#f4f1fb;
@@ -249,7 +255,7 @@ const MOTION = `
 }`;
 
 const BASE = 'https://pierceology.github.io/jnoir-elements/';
-const BUILD = '11 Sep 15:21';
+const BUILD = '14 Sep 16:43';
 
 const SCAN_CSS = `
 .scr{position:fixed;inset:0;z-index:100001;background:#0d0b09;
@@ -385,6 +391,27 @@ const faceFor = (kind, sex, accent) => {
   return (FACE[kind] || FACE.human)(k === 'f' ? 'f' : k === 'm' ? 'm' : 'x', accent || '#f0b955');
 };
 
+/* Real faces, where we have one. A centred square crop beheads half of these
+   photographs, so each carries the object-position measured off its original;
+   Smokey has no picture yet and keeps the drawn cat. */
+const PHOTO = {
+  'pierce':       ['pierce.jpg', '52% 34%'],
+  'lacey':        ['lacey.jpg',  '58% 33%'],
+  'jordin':       ['jordin.jpg', '46% 26%'],
+  'calum saints': ['calum.jpg',  '62% 20%'],
+  'l.a.':         ['la.jpg',     '58% 31%'],
+  'l.p.':         ['lp.jpg',     '40% 25%'],
+  'adom':         ['adom.jpg',   '58% 42%'],
+  'zuma':         ['zuma.jpg',   '53% 43%'],
+  'chase':        ['chase.jpg',  '77% 50%'],
+  'ryder':        ['ryder.jpg',  '23% 56%']
+};
+const avatarFor = (name, kind, sex, accent) => {
+  const p = PHOTO[String(name == null ? '' : name).trim().toLowerCase()];
+  return p ? `<img src="${BASE}faces/${p[0]}" alt="" loading="lazy" style="object-position:${p[1]}">`
+           : faceFor(kind, sex, accent);
+};
+
 const P = n => '$' + Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 const esc = s => String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const initials = n => String(n).trim().split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase();
@@ -443,6 +470,22 @@ class PierceHousehold extends HTMLElement {
     tidy();
     setTimeout(tidy, 800);
     setTimeout(tidy, 2500);
+
+    /* Add-to-home-screen icon. Wix owns <head>, so the element plants its own
+       links there; the family photo is the app, not a logo of one. */
+    const head = (rel, href, extra) => {
+      let l = document.querySelector('link[rel="' + rel + '"][data-hh]');
+      if (!l){ l = document.createElement('link'); l.rel = rel;
+               l.setAttribute('data-hh',''); document.head.appendChild(l); }
+      if (extra) l.sizes = extra;
+      l.href = href;
+    };
+    head('apple-touch-icon', BASE + 'faces/fam-icon.jpg', '512x512');
+    head('icon', BASE + 'faces/fam-icon.jpg', '512x512');
+    let m = document.querySelector('meta[name="apple-mobile-web-app-title"][data-hh]');
+    if (!m){ m = document.createElement('meta'); m.name = 'apple-mobile-web-app-title';
+             m.setAttribute('data-hh',''); document.head.appendChild(m); }
+    m.content = this.getAttribute('hh-view') === 'money' ? 'Expenses' : 'Household';
     addEventListener('orientationchange', () => setTimeout(this._fit, 250));
     if (window.visualViewport) visualViewport.addEventListener('resize', this._fit);
     this.addEventListener('input', e => {
@@ -486,6 +529,19 @@ class PierceHousehold extends HTMLElement {
   onClick(e){
     const tab = e.target.closest('[data-tab]');
     if (tab){ this.tab = tab.dataset.tab; this.render(); return; }
+
+    /* The count is the headline; the list is the answer. Tapping one goes to
+       the other, from whichever tab you happen to be standing on. */
+    const jump = e.target.closest('[data-jump]');
+    if (jump){
+      if (this.tab !== 'today'){ this.tab = 'today'; this.render(); }
+      const go = () => {
+        const list = this.root.querySelector('[data-low-list]');
+        if (list) list.scrollIntoView({behavior:'smooth', block:'start'});
+      };
+      requestAnimationFrame(go);
+      return;
+    }
 
     const open = e.target.closest('[data-person]');
     if (open && !e.target.closest('[data-fav]')){ this.person = open.dataset.person; this.render(); return; }
@@ -849,7 +905,7 @@ class PierceHousehold extends HTMLElement {
       const people = (this.data.people||[]).slice().sort((a,b)=>(+a.sortOrder||0)-(+b.sortOrder||0));
       const ask = card.querySelector('.ask');
       if (ask) ask.outerHTML = `<div class="who-pick">${people.map(w=>
-        `<button data-pick="${esc(w.title)}"><span class="av">${faceFor('human', w.sex, w.accent)}</span>${
+        `<button data-pick="${esc(w.title)}"><span class="av">${avatarFor(w.title, 'human', w.sex, w.accent)}</span>${
           esc(w.title.split(' ')[0])}</button>`).join('')}</div>`;
       this.say('Whose favourite?');
       return;
@@ -978,10 +1034,11 @@ class PierceHousehold extends HTMLElement {
       <div class="grid stats">
         <div class="card"><p class="klabel">In the house</p><p class="big" data-to="${items.length}">${items.length}</p>
           <p class="sub">${floors.size} location${floors.size===1?'':'s'}</p></div>
-        <div class="card"><p class="klabel">Running low</p><p class="big ${low.length?'warn':''}" data-to="${low.length}">${low.length}</p>
-          <p class="sub">${low.length?'need replacing':'all above par'}</p></div>
+        <div class="card tap" data-jump="low" role="button" tabindex="0">
+          <p class="klabel">Running low</p><p class="big ${low.length?'warn':''}" data-to="${low.length}">${low.length}</p>
+          <p class="sub">${low.length?'need replacing \u2014 tap to see them':'all above par'}</p></div>
       </div>
-      <div class="sect"><h2>Running low${low.length?`<span>${low.length}</span>`:''}</h2>${
+      <div class="sect" data-low-list><h2>Running low${low.length?`<span>${low.length}</span>`:''}</h2>${
         low.length ? `<div class="rows">${low.map(i=>this.itemRow(i)).join('')}</div>`
                    : `<div class="card"><p class="empty">Nothing below par. The kitchen is stocked.</p></div>`}</div>
       ${gone.length ? `<div class="sect"><h2>Ordered, never turned up</h2><div class="rows">${
@@ -1100,7 +1157,7 @@ class PierceHousehold extends HTMLElement {
     const no = String(p.avoid||'').split(',').map(x=>x.trim()).filter(Boolean);
     return `
       <button class="back" data-back>&larr; Everyone</button>
-      <div class="hero"><span class="av">${faceFor('human', p.sex, p.accent)}</span>
+      <div class="hero"><span class="av">${avatarFor(p.title, 'human', p.sex, p.accent)}</span>
         <div><h2>${esc(p.title)}</h2>
           <p>${fav.length ? `${fav.length} favourite${fav.length===1?'':'s'}` : 'Nothing on file yet'}</p></div>
       </div>
@@ -1126,7 +1183,7 @@ class PierceHousehold extends HTMLElement {
       const no  = String(p.avoid||'').split(',').map(s=>s.trim()).filter(Boolean);
       const armed = this.mode==='fav' && this.favPerson===p.title;
       return `<div class="card tap" data-person="${esc(p.title)}">
-        <div class="who"><span class="av">${faceFor('human', p.sex, p.accent)}</span>
+        <div class="who"><span class="av">${avatarFor(p.title, 'human', p.sex, p.accent)}</span>
           <div><p class="rt">${esc(p.title)}</p>
             <p class="rs">${fav.length} favourite${fav.length===1?'':'s'}</p></div></div>
         ${fav.length ? `<div class="chips">${fav.map(f=>`<span class="chip">${esc(f)}</span>`).join('')}</div>`
@@ -1146,7 +1203,7 @@ class PierceHousehold extends HTMLElement {
     return Object.entries(floors).map(([f,list])=>`
       <div class="sect"><h2>${esc(f)}<span>${list.length}</span></h2><div class="rows pair">${list.map(p=>`
         <div class="row" style="--acc:${esc(p.accent || (p.species==='Dog' ? '#e8a552' : '#7fb4d8'))}">
-          <span class="av">${faceFor(p.species==='Dog'?'dog':'cat', p.sex, p.accent || (p.species==='Dog'?'#e8a552':'#7fb4d8'))}</span>
+          <span class="av">${avatarFor(p.title, p.species==='Dog'?'dog':'cat', p.sex, p.accent || (p.species==='Dog'?'#e8a552':'#7fb4d8'))}</span>
           <div class="grow"><p class="rt">${esc(p.title)}</p>
             <p class="rs">${[p.species==='?'?'species unconfirmed':p.species, p.sex,
               p.sibling?`${p.sex==='Female'?'sister':p.sex==='Male'?'brother':'sibling'} of ${esc(p.sibling)}`:''].filter(Boolean).map(esc).join(' · ')}</p>
@@ -1194,8 +1251,10 @@ class PierceHousehold extends HTMLElement {
     this.root.innerHTML = `
       <div class="wrap">
         <header class="top">
-          <div><p class="name">Pierce Household</p><h1 class="h1">${
-            this.view === 'money' ? 'Expenses' : 'Dashboard'}</h1></div>
+          <div class="brandline">
+            <span class="crest"><img src="${BASE}faces/fam-icon.jpg" alt="The Pierce household"></span>
+            <div><p class="name">Pierce Household</p><h1 class="h1">${
+              this.view === 'money' ? 'Expenses' : 'Dashboard'}</h1></div></div>
           <p class="when">${new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}
             <br><span style="opacity:.5;font-size:10.5px;letter-spacing:.08em">build ${BUILD}</span></p>
         </header>
