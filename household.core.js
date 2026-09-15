@@ -230,11 +230,12 @@ pierce-household, wix-default-custom-element { display:block; width:100%; overfl
 .finder li{margin-bottom:7px}
 .finder li button{width:100%;display:flex;align-items:center;gap:11px;appearance:none;cursor:pointer;
   border:1px solid var(--line);border-radius:13px;background:#f5f1fc;color:var(--ink);
-  font:600 13.5px/1.3 inherit;padding:8px 11px;text-align:left}
+  font:600 14px/1.32 inherit;padding:9px 11px;text-align:left;min-height:62px}
 .finder li button:hover{background:#ece5f9;border-color:var(--fav)}
 .finder li button img{width:48px;height:48px;border-radius:10px;object-fit:contain;
   background:#fff;flex:none;padding:3px}
-.finder li button span{flex:1;min-width:0}
+.finder li button span{flex:1;min-width:0;overflow-wrap:anywhere;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .modes{display:flex;gap:3px;padding:3px;background:var(--card);border:1px solid var(--line);border-radius:11px}
 .mode{flex:1;appearance:none;border:0;background:transparent;color:var(--dim);cursor:pointer;
   font:600 12.5px/1 inherit;padding:9px 6px;border-radius:8px;white-space:nowrap}
@@ -306,11 +307,12 @@ const MOTION = `
 }`;
 
 const BASE = 'https://pierceology.github.io/jnoir-elements/';
-const BUILD = '15 Sep 14:06';
+const BUILD = '15 Sep 14:07';
 
 const SCAN_CSS = `
-.scr{position:fixed;inset:0;z-index:100001;background:#0d0b09;
+.scr{position:fixed;inset:0;z-index:100001;background:#0d0b09;max-width:100vw;overflow:hidden;
   display:flex;flex-direction:column;color:#f4effb;font:inherit}
+.scr *{max-width:100%}
 .scr video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
 .scr .veil{position:absolute;inset:0;background:
   linear-gradient(rgba(13,11,9,.72),rgba(13,11,9,.16) 28%,rgba(13,11,9,.16) 72%,rgba(13,11,9,.86))}
@@ -522,8 +524,13 @@ class PierceHousehold extends HTMLElement {
       if (!this._scr) return;
       const vv = window.visualViewport;
       const h = Math.round((vv && vv.height) || window.innerHeight || 0);
-      if (!h) return;
-      this._scr.style.height = h + 'px';
+      const w = Math.round((vv && vv.width)  || window.innerWidth  || 0);
+      if (!h || !w) return;
+      const st = this._scr.style;
+      st.height = h + 'px';
+      st.width  = w + 'px';
+      st.left   = Math.round((vv && vv.offsetLeft) || 0) + 'px';
+      st.right  = 'auto';
     };
     this._fit();
     addEventListener('resize', this._fit);
@@ -1058,6 +1065,7 @@ class PierceHousehold extends HTMLElement {
       rows.sort((a,b)=> a[0]-b[0] || a[1].localeCompare(b[1]));
       rows = rows.slice(0, 50);
     }
+    t.list.scrollTop = 0;
     t.list.innerHTML = rows.map(r => `<li><button data-find="${esc(r[2])}">${
         r[3].i ? `<img src="${esc(r[3].i)}" alt="">` : ''}<span>${esc(r[3].n)}${
         r[3].s ? ' · ' + esc(r[3].s) : ''}</span></button></li>`).join('');
