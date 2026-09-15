@@ -204,7 +204,18 @@ pierce-household, wix-default-custom-element { display:block; width:100%; overfl
   .scan{padding:15px;font-size:15px}
   .hh{padding-bottom:40px}
 }
-.scaninner{max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:9px}
+.scaninner{max-width:720px;margin:0 auto;display:flex;align-items:stretch;gap:9px}
+.scaninner .scan{flex:1;min-width:0}
+.type{appearance:none;flex:none;border:1px solid rgba(255,255,255,.3);border-radius:16px;cursor:pointer;
+  background:#221c33;color:#fff;font:700 14.5px/1 inherit;padding:17px 17px;white-space:nowrap;
+  display:flex;align-items:center;gap:8px;box-shadow:0 8px 30px rgba(0,0,0,.34)}
+.type svg{width:17px;height:17px;flex:none}
+.type:hover{background:#2c2442}
+.type:active{transform:translateY(1px)}
+/* the typed-in search wears the scanner's shell, minus the camera */
+.scr.typing{background:#161122}
+/* the list is the whole point of this screen, so give it the room */
+.scr.typing .mine ul{max-height:min(48vh,430px)}
 .modes{display:flex;gap:3px;padding:3px;background:var(--card);border:1px solid var(--line);border-radius:11px}
 .mode{flex:1;appearance:none;border:0;background:transparent;color:var(--dim);cursor:pointer;
   font:600 12.5px/1 inherit;padding:9px 6px;border-radius:8px;white-space:nowrap}
@@ -276,7 +287,7 @@ const MOTION = `
 }`;
 
 const BASE = 'https://pierceology.github.io/jnoir-elements/';
-const BUILD = '15 Sep 13:51';
+const BUILD = '15 Sep 13:57';
 
 const SCAN_CSS = `
 .scr{position:fixed;inset:0;z-index:100001;background:#0d0b09;
@@ -663,6 +674,17 @@ class PierceHousehold extends HTMLElement {
     const bind = e.target.closest('[data-bind]');
     if (bind){ this.bindTo(bind.dataset.bind); return; }
 
+    const find = e.target.closest('[data-find]');
+    if (find){
+      const cat = this._cat, k = find.dataset.find;
+      const prod = cat && cat.items[k];
+      const card = this._scr && this._scr.querySelector('.hit');
+      if (prod && card){ this.offer(prod, k, k, cat, card); this.mark('typed:hit:' + k); }
+      return;
+    }
+
+    if (e.target.closest('[data-type]')){ this.openTyper(); return; }
+
     const pick = e.target.closest('[data-pick]');
     if (pick){ this.decide('fav', pick.dataset.pick); return; }
 
@@ -903,21 +925,7 @@ class PierceHousehold extends HTMLElement {
       this.say("Not on the list. Tell me what it is and it'll know next time.");
       this.mark('scan:miss:' + code);
     } else {
-      const aisle = cat.aisles[prod.a] || prod.d || (prod._src === 'world' ? 'not a shop line' : '');
-      this._pending = {upc:key, code, product:prod, aisle,
-        aisleOrder: /^\d+$/.test(prod.a) ? 5 : 20 + (parseInt(prod.a,10) || 50)};
-      card.innerHTML = `
-        <span class="shot">${prod.i ? `<img src="${esc(prod.i)}" alt="">`
-                                    : `<span>${esc(prod.n.trim()[0]||'?')}</span>`}</span>
-        <div class="txt"><b>${esc(prod.n)}</b>
-          <em>${[prod.b, prod.s, aisle, prod.p != null ? P(prod.p) : ''].filter(Boolean).map(esc).join(' · ')}</em></div>
-        <div class="ask">
-          <button data-act="in">Putting away<b>+1</b></button>
-          <button data-act="out">Using<b>&minus;1</b></button>
-          <button data-act="fav">Favourite<b>WHOSE?</b></button>
-          <button data-act="food">Pet food<b>${this.foodPet ? esc(this.foodPet.split(' ')[0].toUpperCase()) : 'WHOSE?'}</b></button>
-        </div>`;
-      this.say('Which is it?');
+      this.offer(prod, key, code, cat, card);
       this.mark('scan:hit:' + key);
     }
     if (!card.parentNode) w.appendChild(card);
@@ -925,6 +933,91 @@ class PierceHousehold extends HTMLElement {
       this.say('Point it at a barcode.');
       setTimeout(()=>{ if (this._scr) this._scr.classList.remove('busy'); }, 1200);
     }
+  }
+
+  /* The card a product gets, however we came to it — read off a barcode, or
+     typed into the search when the barcode would not read. Same card, same
+     questions, same commit, so there is only ever one of these to keep right. */
+  offer(prod, key, code, cat, card){
+    const aisle = (cat && cat.aisles && cat.aisles[prod.a]) || prod.d
+                || (prod._src === 'world' ? 'not a shop line' : '');
+    this._pending = {upc:key, code, product:prod, aisle,
+      aisleOrder: /^\d+$/.test(prod.a) ? 5 : 20 + (parseInt(prod.a,10) || 50)};
+    card.innerHTML = `
+      <span class="shot">${prod.i ? `<img src="${esc(prod.i)}" alt="">`
+                                  : `<span>${esc(String(prod.n||'?').trim()[0]||'?')}</span>`}</span>
+      <div class="txt"><b>${esc(prod.n)}</b>
+        <em>${[prod.b, prod.s, aisle, prod.p != null ? P(prod.p) : ''].filter(Boolean).map(esc).join(' · ')}</em></div>
+      <div class="ask">
+        <button data-act="in">Putting away<b>+1</b></button>
+        <button data-act="out">Using<b>&minus;1</b></button>
+        <button data-act="fav">Favourite<b>WHOSE?</b></button>
+        <button data-act="food">Pet food<b>${this.foodPet ? esc(this.foodPet.split(' ')[0].toUpperCase()) : 'WHOSE?'}</b></button>
+      </div>`;
+    this.say('Which is it?');
+  }
+
+  /* A barcode that will not read is not the end of it. A crushed box, a loose
+     apple, a bag already in the bin — the shop list is still 4,127 things we
+     can name, and naming one lands in exactly the same place a scan does. */
+  async openTyper(){
+    if (this._scr) return;
+    const w = document.createElement('div');
+    w.className = 'scr typing';
+    w.innerHTML = `
+      <div class="top"><div class="what">Type it instead<small>Search the Stop &amp; Shop list, then the same questions.</small></div>
+        <button class="x" data-close-scan aria-label="close">&times;</button></div>
+      <div class="note">Loading the store list…</div>`;
+    this.root.appendChild(w);
+    this._scr = w;
+    this._fit();
+    this.mark('typer:open:' + this.mode);
+
+    let cat;
+    try { cat = await this.catalogue(); }
+    catch(err){
+      this.say('Could not load the store list. ' + ((err && err.message) || ''));
+      this.mark('typer:fail'); return;
+    }
+    const card = document.createElement('div');
+    card.className = 'hit';
+    w.appendChild(card);
+    this.search(undefined, card, cat);
+  }
+
+  search(filter, card, cat){
+    const q = String(filter||'').trim().toLowerCase();
+    let rows = [];
+    if (q.length >= 2){
+      const terms = q.split(/\s+/);
+      for (const k in cat.items){
+        const p = cat.items[k];
+        const hay = ((p.n||'') + ' ' + (p.b||'') + ' ' + (p.c||'')).toLowerCase();
+        let ok = true;
+        for (const t of terms) if (!hay.includes(t)) { ok = false; break; }
+        if (!ok) continue;
+        /* a name that starts with what you typed is what you meant */
+        rows.push([String(p.n||'').toLowerCase().startsWith(q) ? 0 : 1, String(p.n||''), k, p]);
+        if (rows.length >= 400) break;
+      }
+      rows.sort((a,b)=> a[0]-b[0] || a[1].localeCompare(b[1]));
+      rows = rows.slice(0, 40);
+    }
+    const list = rows.map(r => `<li><button data-find="${esc(r[2])}">${
+        r[3].i ? `<img src="${esc(r[3].i)}" alt="">` : ''}<span>${esc(r[3].n)}${
+        r[3].s ? ' · ' + esc(r[3].s) : ''}</span></button></li>`).join('')
+      || `<li><p class="empty">${q.length < 2 ? 'Two letters and it starts looking.'
+                                              : 'Nothing on the shop list matches that.'}</p></li>`;
+    card.innerHTML = `<div class="mine"><input placeholder="Ritz, bananas, cat litter…" value="${esc(filter||'')}">
+      <ul>${list}</ul></div>`;
+    const box = card.querySelector('.mine input');
+    if (box){
+      box.oninput = () => { const v = box.value; this.search(v, card, cat);
+        const nb = card.querySelector('.mine input');
+        if (nb){ nb.focus(); nb.setSelectionRange(v.length, v.length); } };
+      if (filter === undefined) box.focus();
+    }
+    this.say(rows.length ? `${rows.length} on the shelf. Pick one.` : 'What is it called?');
   }
 
   /* A can out of a 24-pack has its own barcode the shop never sells. Point it at
@@ -1382,6 +1475,10 @@ class PierceHousehold extends HTMLElement {
             <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/>
             <path d="M7 8v8M10.5 8v8M14 8v8M17 8v8"/></svg>
           ${esc(label)}</button>
+        <button class="type" data-type title="Search the store list">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round">
+            <circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/></svg>
+          Type it</button>
       </div></div>`}`;
     this.animate();
   }
