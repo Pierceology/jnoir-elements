@@ -313,7 +313,7 @@ const MOTION = `
 }`;
 
 const BASE = 'https://pierceology.github.io/jnoir-elements/';
-const BUILD = '15 Sep 14:17';
+const BUILD = '15 Sep 14:18';
 
 const SCAN_CSS = `
 .scr{position:fixed;inset:0;z-index:100001;background:#0d0b09;max-width:100vw;overflow:hidden;
@@ -650,7 +650,8 @@ class PierceHousehold extends HTMLElement {
     }
 
     const open = e.target.closest('[data-person]');
-    if (open && !e.target.closest('[data-fav]')){ this.person = open.dataset.person; this.render(); return; }
+    if (open && !e.target.closest('[data-fav],[data-favtype]')){
+      this.person = open.dataset.person; this.render(); return; }
     if (e.target.closest('[data-back]')){ this.person = null; this.render(); return; }
 
     const g = e.target.closest('[data-groupby]');
@@ -1459,6 +1460,12 @@ class PierceHousehold extends HTMLElement {
       <div class="hero"><span class="av">${avatarFor(p.title, 'human', p.sex, p.accent)}</span>
         <div><h2>${esc(p.title)}</h2>
           <p>${fav.length ? `${fav.length} favourite${fav.length===1?'':'s'}` : 'Nothing on file yet'}</p></div>
+      </div>
+      <div class="acts" style="margin:0 0 22px">
+        <button class="ghost" data-fav="${esc(p.title)}" aria-pressed="${
+          this.mode==='fav' && this.favPerson===p.title}">${
+          this.mode==='fav' && this.favPerson===p.title ? 'Scanning — stop' : 'Scan'}</button>
+        <button class="ghost" data-favtype="${esc(p.title)}">Find in store</button>
       </div>
       ${fav.length ? `<div class="favs">${fav.map(f=>{
         const it = shelf(f);
