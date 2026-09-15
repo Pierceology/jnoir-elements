@@ -111,10 +111,11 @@ pierce-household, wix-default-custom-element { display:block; width:100%; overfl
 .sect h2 span{color:var(--faint)}
 
 /* the shelf: a real photograph, or a coloured tile with its letter */
-.thumb{width:46px;height:46px;border-radius:12px;flex:none;overflow:hidden;position:relative;
-  background:#fff;border:1px solid var(--line);display:grid;place-items:center}
+.thumb{width:68px;height:68px;border-radius:15px;flex:none;overflow:hidden;position:relative;
+  background:#fff;border:1px solid var(--line);display:grid;place-items:center;
+  box-shadow:0 2px 7px rgba(25,19,37,.10)}
 .thumb img{width:100%;height:100%;object-fit:contain;background:#fff;display:block}
-.thumb .ltr{font:400 23px/1 inherit;width:100%;height:100%;display:grid;place-items:center;
+.thumb .ltr{font:400 32px/1 inherit;width:100%;height:100%;display:grid;place-items:center;
   background:color-mix(in srgb,var(--acc) 16%,#fff)}
 .row.item{gap:11px;padding:12px 13px}
 .row.item .rs{font-size:11.5px}
@@ -287,7 +288,7 @@ const MOTION = `
 }`;
 
 const BASE = 'https://pierceology.github.io/jnoir-elements/';
-const BUILD = '15 Sep 13:57';
+const BUILD = '15 Sep 13:58';
 
 const SCAN_CSS = `
 .scr{position:fixed;inset:0;z-index:100001;background:#0d0b09;
@@ -319,16 +320,19 @@ const SCAN_CSS = `
 
 .hit{position:absolute;left:14px;right:14px;bottom:calc(20px + env(safe-area-inset-bottom));
   background:linear-gradient(165deg,var(--card2),var(--card));border:1px solid var(--line);
-  border-radius:17px;padding:14px;display:flex;gap:13px;align-items:center;
+  border-radius:19px;padding:15px;display:flex;gap:15px;align-items:center;
   box-shadow:0 18px 50px rgba(0,0,0,.6);animation:riseIn .3s cubic-bezier(.2,.9,.3,1) both}
-.hit .shot{width:62px;height:62px;border-radius:12px;background:#fff;flex:none;overflow:hidden;
-  display:grid;place-items:center}
-.hit .shot img{width:100%;height:100%;object-fit:contain}
-.hit .shot span{color:#17130f;font:700 22px/1 inherit;width:100%;height:100%;display:grid;
+/* You are about to add this to the house or take it out of it. You should be
+   able to see, across the kitchen, that it is the right thing. */
+.hit .shot{width:clamp(96px,26vw,132px);height:clamp(96px,26vw,132px);border-radius:16px;
+  background:#fff;flex:none;overflow:hidden;display:grid;place-items:center;
+  box-shadow:0 3px 14px rgba(0,0,0,.28)}
+.hit .shot img{width:100%;height:100%;object-fit:contain;padding:6px}
+.hit .shot span{color:#17130f;font:700 44px/1 inherit;width:100%;height:100%;display:grid;
   place-items:center;background:var(--gold)}
 .hit .txt{flex:1;min-width:0}
-.hit .txt b{display:block;font-size:14.5px;font-weight:600;line-height:1.25}
-.hit .txt em{display:block;font-style:normal;font-size:12px;color:var(--dim);margin-top:4px}
+.hit .txt b{display:block;font-size:17px;font-weight:600;line-height:1.22}
+.hit .txt em{display:block;font-style:normal;font-size:12.5px;color:var(--dim);margin-top:6px;line-height:1.4}
 .hit{flex-wrap:wrap}
 .hit .tick{font:700 12px/1 inherit;letter-spacing:.08em;text-transform:uppercase;
   padding:7px 11px;border-radius:99px;white-space:nowrap;flex:none}
@@ -358,10 +362,11 @@ const SCAN_CSS = `
 .mine input::placeholder{color:var(--faint)}
 .mine ul{list-style:none;margin:8px 0 0;padding:0;max-height:190px;overflow-y:auto}
 .mine li{margin-bottom:6px}
-.mine button{width:100%;display:flex;align-items:center;gap:10px;appearance:none;cursor:pointer;
-  border:1px solid var(--line);border-radius:11px;background:#2b221c;color:var(--ink);
-  font:600 13px/1.25 inherit;padding:9px 10px;text-align:left}
-.mine button img{width:30px;height:30px;border-radius:7px;object-fit:contain;background:#fff;flex:none}
+.mine button{width:100%;display:flex;align-items:center;gap:11px;appearance:none;cursor:pointer;
+  border:1px solid var(--line);border-radius:13px;background:#2b221c;color:var(--ink);
+  font:600 13.5px/1.3 inherit;padding:8px 11px;text-align:left}
+.mine button img{width:48px;height:48px;border-radius:10px;object-fit:contain;background:#fff;
+  flex:none;padding:3px}
 .mine button span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* Us: the photograph is the card. Square, because every one of these was
@@ -635,6 +640,9 @@ class PierceHousehold extends HTMLElement {
       this.foodPet = null;
       this.render();
       this.mark('fav-mode:' + (this.favPerson || 'off'));
+      /* Arming and then hunting for the other button was two taps for one
+         intention. Saying whose favourite it is opens the camera. */
+      if (!on) this.startScan();
       return;
     }
 
@@ -648,6 +656,7 @@ class PierceHousehold extends HTMLElement {
       this.favPerson = null;
       this.render();
       this.mark('food-mode:' + (this.foodPet || 'off'));
+      if (!on) this.startScan();
       return;
     }
 
@@ -691,12 +700,14 @@ class PierceHousehold extends HTMLElement {
     const petPick = e.target.closest('[data-pickpet]');
     if (petPick){ this.decide('food', petPick.dataset.pickpet); return; }
 
-    if (e.target.closest('[data-scan]')){
-      this.openScanner();
-      const detail = {mode:this.mode, person:this.favPerson, pet:this.foodPet};
-      this.dispatchEvent(new CustomEvent(this.mode === 'fav' ? 'hh-fav' : 'hh-scan',{detail,bubbles:true}));
-      this.mark('scan:' + this.mode + (this.favPerson || this.foodPet ? ':' + (this.favPerson || this.foodPet) : ''));
-    }
+    if (e.target.closest('[data-scan]')){ this.startScan(); }
+  }
+
+  startScan(){
+    this.openScanner();
+    const detail = {mode:this.mode, person:this.favPerson, pet:this.foodPet};
+    this.dispatchEvent(new CustomEvent(this.mode === 'fav' ? 'hh-fav' : 'hh-scan',{detail,bubbles:true}));
+    this.mark('scan:' + this.mode + (this.favPerson || this.foodPet ? ':' + (this.favPerson || this.foodPet) : ''));
   }
 
   /* ---------- the scanner ---------- */
