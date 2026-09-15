@@ -231,6 +231,17 @@ pierce-household, wix-default-custom-element { display:block; width:100%; overfl
   /* 16px or iOS zooms the page the moment this takes focus */
   font-size:16px}
 .finder input::placeholder{color:var(--faint)}
+.depts,.whofor{flex:none;display:flex;gap:6px;overflow-x:auto;padding-bottom:1px;
+  -webkit-overflow-scrolling:touch;scrollbar-width:none}
+.depts::-webkit-scrollbar,.whofor::-webkit-scrollbar{height:0}
+.depts button,.whofor button{flex:none;appearance:none;cursor:pointer;white-space:nowrap;
+  border:1px solid var(--line);background:#efe9f8;color:var(--ink);border-radius:99px;
+  padding:10px 15px;font-weight:600;font-size:13.5px;line-height:1}
+.depts button[aria-pressed="true"],.whofor button[aria-pressed="true"]{
+  background:var(--fav);border-color:var(--fav);color:#fff}
+.whofor{margin-top:-4px}
+.whofor button{background:#fff5f9;border-color:#f0d7e4}
+.whofor button[aria-pressed="true"]{background:var(--gold);border-color:var(--gold);color:#fff}
 .finder ul{list-style:none;margin:0;padding:0;flex:1;min-height:0;overflow-y:auto;
   -webkit-overflow-scrolling:touch}
 .finder li{margin-bottom:7px}
@@ -313,7 +324,7 @@ const MOTION = `
 }`;
 
 const BASE = 'https://pierceology.github.io/jnoir-elements/';
-const BUILD = '15 Sep 14:18';
+const BUILD = '15 Sep 15:33';
 
 const SCAN_CSS = `
 .scr{position:fixed;inset:0;z-index:100001;background:#0d0b09;max-width:100vw;overflow:hidden;
@@ -748,6 +759,26 @@ class PierceHousehold extends HTMLElement {
 
     if (e.target.closest('[data-type]')){ this.openTyper(); return; }
 
+    const dep = e.target.closest('[data-dept]');
+    if (dep && this._typer){
+      const d = dep.dataset.dept;
+      this._typer.dept = (this._typer.dept === d) ? null : d;
+      this._scr.querySelectorAll('[data-dept]').forEach(b =>
+        b.setAttribute('aria-pressed', String(b.dataset.dept === this._typer.dept)));
+      this.results(this._typerBox ? this._typerBox.value : '');
+      return;
+    }
+
+    const four = e.target.closest('[data-for]');
+    if (four && this._typer){
+      const v = four.dataset.for || '';
+      if (!v){ this.mode = 'in'; this.favPerson = null; this.foodPet = null; }
+      else if (v.slice(0,2) === 'p:'){ this.mode='fav';  this.favPerson=v.slice(2); this.foodPet=null; }
+      else { this.mode='food'; this.foodPet=v.slice(2); this.favPerson=null; }
+      this.drawWho(); this.retitle();
+      return;
+    }
+
     const ft = e.target.closest('[data-favtype]');
     if (ft){
       this.mode = 'fav'; this.favPerson = ft.dataset.favtype; this.foodPet = null;
@@ -1048,13 +1079,13 @@ class PierceHousehold extends HTMLElement {
     const w = document.createElement('div');
     w.className = 'scr typing';
     w.innerHTML = `
-      <div class="top"><div class="what">${esc(this.mode === 'fav' && this.favPerson
-          ? this.favPerson.split(' ')[0] + "'s favourites"
-          : this.mode === 'food' && this.foodPet ? this.foodPet + "'s food" : 'Type it')}</div>
+      <div class="top"><div class="what"></div>
         <button class="x" data-close-scan aria-label="close">&times;</button></div>
       <div class="finder">
         <input type="search" inputmode="search" enterkeyhint="search" autocomplete="off"
                autocorrect="off" autocapitalize="none" spellcheck="false" placeholder="What is it?">
+        <div class="depts"></div>
+        <div class="whofor"></div>
         <ul></ul></div>`;
     this.root.appendChild(w);
     this._scr = w;
@@ -1065,14 +1096,21 @@ class PierceHousehold extends HTMLElement {
     try { cat = await this.catalogue(); }
     catch(err){ this.mark('typer:fail'); return; }
 
-    /* Built once, and only the list inside it changes. Re-rendering the field
-       on every keystroke destroyed the input mid-word, which drops the caret to
-       the end of the line and, on a phone, shuts the keyboard and throws away
-       whatever autocorrect was doing. And the field lives at the top, because
-       the bottom of the screen is where the keyboard goes. */
     const box  = w.querySelector('.finder input');
     const list = w.querySelector('.finder ul');
-    this._typer = {list, cat};
+    this._typer = {list, cat, dept:null};
+
+    /* Walking to the crisps beats spelling them. Departments come out of the
+       shop list itself, biggest first, so the ones you reach for are nearest. */
+    const count = {};
+    for (const k in cat.items){ const d = cat.items[k].d || 'Other'; count[d] = (count[d]||0)+1; }
+    const depts = Object.keys(count).sort((a,b)=>count[b]-count[a]);
+    w.querySelector('.depts').innerHTML = depts.map(d =>
+      `<button data-dept="${esc(d)}" aria-pressed="false">${esc(d)}</button>`).join('');
+
+    this.drawWho();
+    this.retitle();
+
     let t = null;
     box.addEventListener('input', () => {
       clearTimeout(t);
@@ -1084,27 +1122,53 @@ class PierceHousehold extends HTMLElement {
       const first = list.querySelector('button[data-find]');
       if (first) first.click();
     });
-    box.focus();
+    this._typerBox = box;
+  }
+
+  /* Who the next tap is for. Changing it here saves closing and coming back. */
+  drawWho(){
+    const w = this._scr; if (!w) return;
+    const el = w.querySelector('.whofor'); if (!el) return;
+    const people = (this.data.people||[]).slice().sort((a,b)=>(+a.sortOrder||0)-(+b.sortOrder||0));
+    const pets   = (this.data.pets||[]).slice().sort((a,b)=>(+a.sortOrder||0)-(+b.sortOrder||0));
+    const none = !(this.mode === 'fav' && this.favPerson) && !(this.mode === 'food' && this.foodPet);
+    el.innerHTML =
+      `<button data-for="" aria-pressed="${none}">The house</button>` +
+      people.map(p=>`<button data-for="p:${esc(p.title)}" aria-pressed="${
+        this.mode==='fav'&&this.favPerson===p.title}">${esc(p.title.split(' ')[0])}</button>`).join('') +
+      pets.map(a=>`<button data-for="a:${esc(a.title)}" aria-pressed="${
+        this.mode==='food'&&this.foodPet===a.title}">${esc(a.title)}</button>`).join('');
+  }
+
+  retitle(){
+    const w = this._scr; if (!w) return;
+    const el = w.querySelector('.what'); if (!el) return;
+    el.textContent = this.mode === 'fav' && this.favPerson
+      ? this.favPerson.split(' ')[0] + "'s favourites"
+      : this.mode === 'food' && this.foodPet ? this.foodPet + "'s food" : 'Add to the house';
   }
 
   results(q){
     const t = this._typer; if (!t) return;
     const s = String(q||'').trim().toLowerCase();
     let rows = [];
-    if (s){
-      const terms = s.split(/\s+/);
+    if (s || t.dept){
+      const terms = s ? s.split(/\s+/) : [];
       for (const k in t.cat.items){
         const p = t.cat.items[k];
-        const hay = ((p.n||'') + ' ' + (p.b||'') + ' ' + (p.c||'')).toLowerCase();
-        let ok = true;
-        for (const w of terms) if (!hay.includes(w)) { ok = false; break; }
-        if (!ok) continue;
+        if (t.dept && (p.d || 'Other') !== t.dept) continue;
+        if (terms.length){
+          const hay = ((p.n||'') + ' ' + (p.b||'') + ' ' + (p.c||'')).toLowerCase();
+          let ok = true;
+          for (const w of terms) if (!hay.includes(w)) { ok = false; break; }
+          if (!ok) continue;
+        }
         /* a name that starts with what you typed is what you meant */
-        rows.push([String(p.n||'').toLowerCase().startsWith(s) ? 0 : 1, String(p.n||''), k, p]);
-        if (rows.length >= 400) break;
+        rows.push([s && String(p.n||'').toLowerCase().startsWith(s) ? 0 : 1, String(p.n||''), k, p]);
+        if (rows.length >= 600) break;
       }
       rows.sort((a,b)=> a[0]-b[0] || a[1].localeCompare(b[1]));
-      rows = rows.slice(0, 50);
+      rows = rows.slice(0, s ? 50 : 80);
     }
     t.list.scrollTop = 0;
     t.list.innerHTML = rows.map(r => `<li><button data-find="${esc(r[2])}">${
