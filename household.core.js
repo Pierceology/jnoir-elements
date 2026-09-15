@@ -185,7 +185,7 @@ pierce-household, wix-default-custom-element { display:block; width:100%; overfl
   border:2px solid #fff;box-shadow:0 2px 8px rgba(25,19,37,.14)}
 .av svg{width:100%;height:100%;display:block}
 .av img{width:100%;height:100%;display:block;object-fit:cover}
-.pill.sex{background:#2b221c;color:var(--dim)}
+.pill.sex{background:#f1ecfa;color:var(--dim)}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
 .chip{font-size:12.5px;padding:5px 11px;border-radius:99px;background:#f4f1fb;
   border:1px solid var(--line);color:var(--dim)}
@@ -220,7 +220,7 @@ pierce-household, wix-default-custom-element { display:block; width:100%; overfl
 .modes{display:flex;gap:3px;padding:3px;background:var(--card);border:1px solid var(--line);border-radius:11px}
 .mode{flex:1;appearance:none;border:0;background:transparent;color:var(--dim);cursor:pointer;
   font:600 12.5px/1 inherit;padding:9px 6px;border-radius:8px;white-space:nowrap}
-.mode[aria-selected="true"]{background:#26231e;color:var(--ink)}
+.mode[aria-selected="true"]{background:#efe9f8;color:var(--ink)}
 .mode[aria-selected="true"][data-mode="fav"]{color:var(--fav)}
 .scan{width:100%;appearance:none;border:0;border-radius:16px;cursor:pointer;
   background:linear-gradient(100deg,var(--gold),var(--mango));color:#fff;font:700 16px/1 inherit;padding:17px;
@@ -288,20 +288,20 @@ const MOTION = `
 }`;
 
 const BASE = 'https://pierceology.github.io/jnoir-elements/';
-const BUILD = '15 Sep 13:58';
+const BUILD = '15 Sep 14:00';
 
 const SCAN_CSS = `
 .scr{position:fixed;inset:0;z-index:100001;background:#0d0b09;
-  display:flex;flex-direction:column;color:var(--ink);font:inherit}
+  display:flex;flex-direction:column;color:#f4effb;font:inherit}
 .scr video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
 .scr .veil{position:absolute;inset:0;background:
   linear-gradient(rgba(13,11,9,.72),rgba(13,11,9,.16) 28%,rgba(13,11,9,.16) 72%,rgba(13,11,9,.86))}
 .scr .top{position:relative;flex:none;display:flex;align-items:center;justify-content:space-between;
   gap:12px;padding:calc(14px + env(safe-area-inset-top)) 18px 14px}
 .scr .what{font:700 15px/1.25 inherit}
-.scr .what small{display:block;font:400 12.5px/1.3 inherit;color:var(--dim);margin-top:3px}
-.scr .x{appearance:none;border:1px solid rgba(255,255,255,.22);background:rgba(0,0,0,.45);
-  color:var(--ink);width:40px;height:40px;border-radius:50%;font:600 19px/1 inherit;cursor:pointer;flex:none}
+.scr .what small{display:block;font:400 12.5px/1.3 inherit;color:rgba(244,239,251,.72);margin-top:3px}
+.scr .x{appearance:none;border:1px solid rgba(255,255,255,.34);background:rgba(0,0,0,.5);
+  color:#fff;width:40px;height:40px;border-radius:50%;font:600 19px/1 inherit;cursor:pointer;flex:none}
 .scr .frame{position:relative;flex:1;min-height:0;display:grid;place-items:center;padding:0 30px}
 .scr .box{position:relative;width:min(78vw,380px);aspect-ratio:1;border-radius:22px;
   box-shadow:0 0 0 100vmax rgba(13,11,9,.42)}
@@ -315,13 +315,14 @@ const SCAN_CSS = `
   animation:sweep 2.1s cubic-bezier(.5,0,.5,1) infinite}
 @keyframes sweep{0%,100%{top:10%;opacity:.25}50%{top:88%;opacity:1}}
 .scr .note{position:relative;flex:none;text-align:center;padding:0 24px calc(22px + env(safe-area-inset-bottom));
-  font-size:13.5px;color:var(--dim);min-height:22px}
+  font-size:13.5px;color:rgba(244,239,251,.8);min-height:22px}
 .scr.busy .box u{animation:none}
 
 .hit{position:absolute;left:14px;right:14px;bottom:calc(20px + env(safe-area-inset-bottom));
   background:linear-gradient(165deg,var(--card2),var(--card));border:1px solid var(--line);
   border-radius:19px;padding:15px;display:flex;gap:15px;align-items:center;
-  box-shadow:0 18px 50px rgba(0,0,0,.6);animation:riseIn .3s cubic-bezier(.2,.9,.3,1) both}
+  box-shadow:0 18px 50px rgba(0,0,0,.6);animation:riseIn .3s cubic-bezier(.2,.9,.3,1) both;
+  color:var(--ink)}
 /* You are about to add this to the house or take it out of it. You should be
    able to see, across the kitchen, that it is the right thing. */
 .hit .shot{width:clamp(96px,26vw,132px);height:clamp(96px,26vw,132px);border-radius:16px;
@@ -341,9 +342,9 @@ const SCAN_CSS = `
 .ask{flex:0 0 100%;min-width:0;max-width:100%;display:flex;flex-wrap:wrap;gap:7px;margin-top:2px}
 .ask button{min-width:0}
 .ask button{flex:1 1 30%;appearance:none;border:1px solid var(--line);border-radius:11px;cursor:pointer;
-  background:#2b221c;color:var(--ink);font:600 13px/1.15 inherit;padding:11px 6px;
+  background:#f5f1fc;color:var(--ink);font:600 13px/1.15 inherit;padding:11px 6px;
   transition:transform .14s,background .14s,border-color .14s}
-.ask button:active{transform:scale(.96)}
+.ask button:active{transform:scale(.96);background:#ece5f9}
 .ask button b{display:block;font-size:11px;font-weight:700;letter-spacing:.06em;opacity:.62;margin-top:3px}
 .ask button[data-act="in"]{border-color:rgba(99,211,160,.45)}
 .ask button[data-act="out"]{border-color:rgba(240,176,70,.45)}
@@ -351,20 +352,21 @@ const SCAN_CSS = `
 .ask button[data-act="food"]{border-color:rgba(127,180,216,.45)}
 .who-pick{flex:0 0 100%;min-width:0;max-width:100%;display:flex;flex-wrap:wrap;gap:7px;margin-top:2px}
 .who-pick button{flex:1 1 44%;display:flex;align-items:center;gap:8px;appearance:none;cursor:pointer;
-  border:1px solid var(--line);border-radius:11px;background:#2b221c;color:var(--ink);
+  border:1px solid var(--line);border-radius:11px;background:#f5f1fc;color:var(--ink);
   font:600 13px/1 inherit;padding:8px 10px}
 .who-pick .av{width:34px;height:34px;border-radius:11px;border-width:1.5px}
 .mine{flex:0 0 100%;margin-top:4px;min-width:0;max-width:100%}
 .mine ul,.mine li{min-width:0;max-width:100%}
 .mine button{max-width:100%}
-.mine input{width:100%;appearance:none;background:#2b221c;border:1px solid var(--line);
+.mine input{width:100%;appearance:none;background:#f5f1fc;border:1px solid var(--line);
   border-radius:11px;color:var(--ink);font:400 14px/1 inherit;padding:12px 13px}
 .mine input::placeholder{color:var(--faint)}
 .mine ul{list-style:none;margin:8px 0 0;padding:0;max-height:190px;overflow-y:auto}
 .mine li{margin-bottom:6px}
 .mine button{width:100%;display:flex;align-items:center;gap:11px;appearance:none;cursor:pointer;
-  border:1px solid var(--line);border-radius:13px;background:#2b221c;color:var(--ink);
+  border:1px solid var(--line);border-radius:13px;background:#f5f1fc;color:var(--ink);
   font:600 13.5px/1.3 inherit;padding:8px 11px;text-align:left}
+.mine button:hover{background:#ece5f9;border-color:var(--fav)}
 .mine button img{width:48px;height:48px;border-radius:10px;object-fit:contain;background:#fff;
   flex:none;padding:3px}
 .mine button span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
