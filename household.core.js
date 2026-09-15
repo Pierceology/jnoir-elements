@@ -255,7 +255,7 @@ const MOTION = `
 }`;
 
 const BASE = 'https://pierceology.github.io/jnoir-elements/';
-const BUILD = '14 Sep 22:49';
+const BUILD = '15 Sep 13:32';
 
 const SCAN_CSS = `
 .scr{position:fixed;inset:0;z-index:100001;background:#0d0b09;
@@ -302,9 +302,9 @@ const SCAN_CSS = `
   padding:7px 11px;border-radius:99px;white-space:nowrap;flex:none}
 .tick.wide{flex:0 0 100%;min-width:0;max-width:100%;text-align:center;margin-top:4px;padding:10px;
   white-space:normal;line-height:1.35}
-.ask{flex:0 0 100%;min-width:0;max-width:100%;display:flex;gap:7px;margin-top:2px}
+.ask{flex:0 0 100%;min-width:0;max-width:100%;display:flex;flex-wrap:wrap;gap:7px;margin-top:2px}
 .ask button{min-width:0}
-.ask button{flex:1;appearance:none;border:1px solid var(--line);border-radius:11px;cursor:pointer;
+.ask button{flex:1 1 30%;appearance:none;border:1px solid var(--line);border-radius:11px;cursor:pointer;
   background:#2b221c;color:var(--ink);font:600 13px/1.15 inherit;padding:11px 6px;
   transition:transform .14s,background .14s,border-color .14s}
 .ask button:active{transform:scale(.96)}
@@ -312,6 +312,7 @@ const SCAN_CSS = `
 .ask button[data-act="in"]{border-color:rgba(99,211,160,.45)}
 .ask button[data-act="out"]{border-color:rgba(240,176,70,.45)}
 .ask button[data-act="fav"]{border-color:rgba(201,138,224,.45)}
+.ask button[data-act="food"]{border-color:rgba(127,180,216,.45)}
 .who-pick{flex:0 0 100%;min-width:0;max-width:100%;display:flex;flex-wrap:wrap;gap:7px;margin-top:2px}
 .who-pick button{flex:1 1 44%;display:flex;align-items:center;gap:8px;appearance:none;cursor:pointer;
   border:1px solid var(--line);border-radius:11px;background:#2b221c;color:var(--ink);
@@ -428,6 +429,7 @@ class PierceHousehold extends HTMLElement {
     this.tab = 'today';
     this.mode = 'in';
     this.favPerson = null;
+    this.foodPet = null;
     this.filter = '';
     this.groupBy = 'aisle';
     this.person = null;
@@ -472,21 +474,38 @@ class PierceHousehold extends HTMLElement {
     setTimeout(tidy, 800);
     setTimeout(tidy, 2500);
 
-    /* Add-to-home-screen icon. Wix owns <head>, so the element plants its own
-       links there; the family photo is the app, not a logo of one. */
-    const head = (rel, href, extra) => {
-      let l = document.querySelector('link[rel="' + rel + '"][data-hh]');
-      if (!l){ l = document.createElement('link'); l.rel = rel;
-               l.setAttribute('data-hh',''); document.head.appendChild(l); }
-      if (extra) l.sizes = extra;
+    /* Add-to-home-screen. Wix ships its own apple-touch-icon pointing at a
+       parastorage .ico, which iOS will not draw — that is the blank button on
+       the home screen. Ours has to replace it, not queue up behind it. And it
+       has to be a PNG at 180: iOS ignores a JPEG here often enough to matter. */
+    document.querySelectorAll('link[rel~="apple-touch-icon" i], link[rel~="icon" i]')
+      .forEach(l => { if (!l.hasAttribute('data-hh')) l.remove(); });
+
+    const link = (rel, href, sizes, type) => {
+      const key = rel + (sizes || '');
+      let l = document.head.querySelector('link[data-hh="' + key + '"]');
+      if (!l){ l = document.createElement('link'); l.setAttribute('data-hh', key);
+               document.head.appendChild(l); }
+      l.rel = rel;
+      if (sizes) l.setAttribute('sizes', sizes);
+      if (type) l.type = type;
       l.href = href;
     };
-    head('apple-touch-icon', BASE + 'faces/fam-icon.jpg', '512x512');
-    head('icon', BASE + 'faces/fam-icon.jpg', '512x512');
-    let m = document.querySelector('meta[name="apple-mobile-web-app-title"][data-hh]');
-    if (!m){ m = document.createElement('meta'); m.name = 'apple-mobile-web-app-title';
-             m.setAttribute('data-hh',''); document.head.appendChild(m); }
-    m.content = this.getAttribute('hh-view') === 'money' ? 'Expenses' : 'Household';
+    link('apple-touch-icon', BASE + 'faces/fam-180.png', '180x180', 'image/png');
+    link('apple-touch-icon', BASE + 'faces/fam-512.png', '512x512', 'image/png');
+    link('icon', BASE + 'faces/fam-512.png', '512x512', 'image/png');
+
+    const meta = (name, content) => {
+      let m = document.head.querySelector('meta[name="' + name + '"][data-hh]');
+      if (!m){ m = document.createElement('meta'); m.name = name;
+               m.setAttribute('data-hh',''); document.head.appendChild(m); }
+      m.content = content;
+    };
+    const money = this.getAttribute('hh-view') === 'money';
+    meta('apple-mobile-web-app-title', money ? 'Expenses' : 'Household');
+    meta('apple-mobile-web-app-capable', 'yes');
+    meta('apple-mobile-web-app-status-bar-style', 'default');
+    meta('theme-color', money ? '#f7f4fb' : '#fdf2f4');
     addEventListener('orientationchange', () => setTimeout(this._fit, 250));
     if (window.visualViewport) visualViewport.addEventListener('resize', this._fit);
     this.addEventListener('input', e => {
@@ -554,6 +573,7 @@ class PierceHousehold extends HTMLElement {
     const m = e.target.closest('[data-mode]');
     if (m){
       this.mode = m.dataset.mode;
+      if (this.mode !== 'food') this.foodPet = null;
       if (this.mode !== 'fav') this.favPerson = null;
       else if (!this.favPerson) this.favPerson = (this.data.people||[])[0]?.title || null;
       this.render(); return;
@@ -565,8 +585,22 @@ class PierceHousehold extends HTMLElement {
       const on = this.mode === 'fav' && this.favPerson === who;
       this.mode = on ? 'in' : 'fav';
       this.favPerson = on ? null : who;
+      this.foodPet = null;
       this.render();
       this.mark('fav-mode:' + (this.favPerson || 'off'));
+      return;
+    }
+
+    /* Same gesture as a person's favourite, pointed at an animal's bowl. */
+    const fd = e.target.closest('[data-food]');
+    if (fd){
+      const pet = fd.dataset.food;
+      const on = this.mode === 'food' && this.foodPet === pet;
+      this.mode = on ? 'in' : 'food';
+      this.foodPet = on ? null : pet;
+      this.favPerson = null;
+      this.render();
+      this.mark('food-mode:' + (this.foodPet || 'off'));
       return;
     }
 
@@ -596,11 +630,14 @@ class PierceHousehold extends HTMLElement {
     const pick = e.target.closest('[data-pick]');
     if (pick){ this.decide('fav', pick.dataset.pick); return; }
 
+    const petPick = e.target.closest('[data-pickpet]');
+    if (petPick){ this.decide('food', petPick.dataset.pickpet); return; }
+
     if (e.target.closest('[data-scan]')){
       this.openScanner();
-      const detail = {mode:this.mode, person:this.favPerson};
+      const detail = {mode:this.mode, person:this.favPerson, pet:this.foodPet};
       this.dispatchEvent(new CustomEvent(this.mode === 'fav' ? 'hh-fav' : 'hh-scan',{detail,bubbles:true}));
-      this.mark('scan:' + this.mode + (this.favPerson ? ':' + this.favPerson : ''));
+      this.mark('scan:' + this.mode + (this.favPerson || this.foodPet ? ':' + (this.favPerson || this.foodPet) : ''));
     }
   }
 
@@ -842,6 +879,7 @@ class PierceHousehold extends HTMLElement {
           <button data-act="in">Putting away<b>+1</b></button>
           <button data-act="out">Using<b>&minus;1</b></button>
           <button data-act="fav">Favourite<b>WHOSE?</b></button>
+          <button data-act="food">Pet food<b>${this.foodPet ? esc(this.foodPet.split(' ')[0].toUpperCase()) : 'WHOSE?'}</b></button>
         </div>`;
       this.say('Which is it?');
       this.mark('scan:hit:' + key);
@@ -901,6 +939,18 @@ class PierceHousehold extends HTMLElement {
     const p = this._pending; if (!p) return;
     const card = this._scr && this._scr.querySelector('.hit'); if (!card) return;
 
+    if (mode === 'food' && !person && this.foodPet) person = this.foodPet;
+    if (mode === 'food' && !person){
+      const pets = (this.data.pets||[]).slice().sort((a,b)=>(+a.sortOrder||0)-(+b.sortOrder||0));
+      const ask = card.querySelector('.ask');
+      if (ask) ask.outerHTML = `<div class="who-pick">${pets.map(a=>
+        `<button data-pickpet="${esc(a.title)}"><span class="av">${
+          avatarFor(a.title, a.species==='Dog'?'dog':'cat', a.sex,
+                    a.accent || (a.species==='Dog'?'#e8a552':'#7fb4d8'))}</span>${esc(a.title)}</button>`).join('')}</div>`;
+      this.say('Whose bowl?');
+      return;
+    }
+
     if (mode === 'fav' && !person && this.favPerson) person = this.favPerson;
     if (mode === 'fav' && !person){
       const people = (this.data.people||[]).slice().sort((a,b)=>(+a.sortOrder||0)-(+b.sortOrder||0));
@@ -912,9 +962,10 @@ class PierceHousehold extends HTMLElement {
       return;
     }
 
-    const word = mode === 'fav' ? (person ? person.split(' ')[0] + "'s favourite" : 'favourite')
-               : mode === 'out' ? 'taken out' : 'put away';
-    const cls  = mode === 'fav' ? 'fv' : mode === 'out' ? 'dn' : 'up';
+    const word = mode === 'fav'  ? (person ? person.split(' ')[0] + "'s favourite" : 'favourite')
+               : mode === 'food' ? (person ? person + "'s food" : 'pet food')
+               : mode === 'out'  ? 'taken out' : 'put away';
+    const cls  = mode === 'fav' || mode === 'food' ? 'fv' : mode === 'out' ? 'dn' : 'up';
     const tail = card.querySelector('.ask') || card.querySelector('.who-pick');
     if (tail) tail.outerHTML = `<span class="tick wide ${cls}">${esc(word)}</span>`;
 
@@ -939,6 +990,17 @@ class PierceHousehold extends HTMLElement {
       if (!have.some(f => f.toLowerCase() === name.toLowerCase())) have.push(name);
       who.favourites = have.join(', ');
       this.ask('patch', {collection:'HouseholdPeople', id:who._id, fields:{favourites:who.favourites}});
+      return;
+    }
+
+    if (mode === 'food'){
+      const pet = (this.data.pets||[]).find(a => a.title === person);
+      if (!pet) return;
+      const name = (p.product && p.product.n) || p.upc;
+      const have = String(pet.food||'').split(',').map(x=>x.trim()).filter(Boolean);
+      if (!have.some(f => f.toLowerCase() === name.toLowerCase())) have.push(name);
+      pet.food = have.join(', ');
+      this.ask('patch', {collection:'HouseholdPets', id:pet._id, fields:{food:pet.food}});
       return;
     }
 
@@ -1202,15 +1264,22 @@ class PierceHousehold extends HTMLElement {
     const floors = {};
     pets.forEach(p => { const k = p.floor||'House'; (floors[k] = floors[k]||[]).push(p); });
     return Object.entries(floors).map(([f,list])=>`
-      <div class="sect"><h2>${esc(f)}<span>${list.length}</span></h2><div class="rows pair">${list.map(p=>`
+      <div class="sect"><h2>${esc(f)}<span>${list.length}</span></h2><div class="rows pair">${list.map(p=>{
+        const food = String(p.food||'').split(',').map(x=>x.trim()).filter(Boolean);
+        const armed = this.mode==='food' && this.foodPet===p.title;
+        return `
         <div class="row" style="--acc:${esc(p.accent || (p.species==='Dog' ? '#e8a552' : '#7fb4d8'))}">
           <span class="av">${avatarFor(p.title, p.species==='Dog'?'dog':'cat', p.sex, p.accent || (p.species==='Dog'?'#e8a552':'#7fb4d8'))}</span>
           <div class="grow"><p class="rt">${esc(p.title)}</p>
             <p class="rs">${[p.species==='?'?'species unconfirmed':p.species, p.sex,
               p.sibling?`${p.sex==='Female'?'sister':p.sex==='Male'?'brother':'sibling'} of ${esc(p.sibling)}`:''].filter(Boolean).map(esc).join(' · ')}</p>
-            ${p.note?`<p class="rs">${esc(p.note)}</p>`:''}</div>
-          ${p.food?`<span class="pill ok">${esc(p.food)}</span>`:`<span class="pill lo">no food on file</span>`}
-        </div>`).join('')}</div></div>`).join('');
+            ${p.note?`<p class="rs">${esc(p.note)}</p>`:''}
+            ${food.length?`<div class="chips">${food.map(n=>`<span class="chip">${esc(n)}</span>`).join('')}</div>`:''}
+            <button class="ghost" data-food="${esc(p.title)}" aria-pressed="${armed}">${
+              armed ? 'Scanning food — tap to stop' : `Scan ${esc(p.title)}'s food`}</button></div>
+          ${food.length?`<span class="pill ok">${food.length} food${food.length===1?'':'s'}</span>`
+                      :`<span class="pill lo">no food on file</span>`}
+        </div>`;}).join('')}</div></div>`).join('');
   }
 
   animate(){
@@ -1246,6 +1315,8 @@ class PierceHousehold extends HTMLElement {
     const body = (views[this.tab] || views[tabs[0][0]])();
     const label = this.mode === 'fav' && this.favPerson
       ? `Scan ${this.favPerson.split(' ')[0]}'s favourites`
+      : this.mode === 'food' && this.foodPet
+      ? `Scan ${this.foodPet}'s food`
       : 'Scan an item';
 
     this.root.className = 'hh' + (this.view === 'money' ? ' money' : '');
@@ -1264,7 +1335,7 @@ class PierceHousehold extends HTMLElement {
         ${body}
       </div>
       ${this.view === 'money' ? '' : `<div class="scanbar"><div class="scaninner">
-        <button class="scan${this.mode==='fav'?' fav':''}" data-scan>
+        <button class="scan${this.mode==='fav'||this.mode==='food'?' fav':''}" data-scan>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round">
             <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/>
             <path d="M7 8v8M10.5 8v8M14 8v8M17 8v8"/></svg>
