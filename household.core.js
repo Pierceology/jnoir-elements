@@ -219,6 +219,9 @@ pierce-household, wix-default-custom-element { display:block; width:100%; overfl
    to be pinned to the bottom, which is precisely where the keyboard arrives. */
 .finder{position:relative;flex:1;min-height:0;display:flex;flex-direction:column;
   gap:10px;padding:2px 14px 14px}
+/* display:flex on a class beats the [hidden] default, so say it here or the
+   list carries on showing through the card you just picked */
+.finder[hidden]{display:none}
 .finder input{flex:none;width:100%;appearance:none;background:#f5f1fc;border:1px solid var(--line);
   border-radius:13px;color:var(--ink);font:400 16px/1.2 inherit;padding:14px 15px}
 .finder input::placeholder{color:var(--faint)}
@@ -303,7 +306,7 @@ const MOTION = `
 }`;
 
 const BASE = 'https://pierceology.github.io/jnoir-elements/';
-const BUILD = '15 Sep 14:04';
+const BUILD = '15 Sep 14:06';
 
 const SCAN_CSS = `
 .scr{position:fixed;inset:0;z-index:100001;background:#0d0b09;
