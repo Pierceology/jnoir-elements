@@ -56,24 +56,24 @@ pierce-household, wix-default-custom-element { display:block; width:100%; overfl
 .rows.solo{grid-template-columns:minmax(0,1fr)}
 @media(min-width:1000px){ .rows.pair{grid-template-columns:repeat(2,minmax(0,1fr))} }
 
-.top{padding:34px 0 26px;display:flex;align-items:flex-end;justify-content:space-between;gap:16px}
-.brandline{display:flex;align-items:center;gap:15px;min-width:0}
-.crest{width:66px;height:66px;border-radius:22px;overflow:hidden;flex:none;
-  border:2.5px solid #fff;box-shadow:0 3px 12px rgba(25,19,37,.18);background:#f1ecfa}
-.crest img{width:100%;height:100%;object-fit:cover;display:block}
-@media(max-width:420px){ .crest{width:54px;height:54px;border-radius:18px} }
-@media(min-width:820px){ .top{padding:56px 0 30px} .when{font-size:13px} }
-/* Below this the title, the crest and the date cannot share one line without
-   the date landing on top of the word Dashboard. So it takes its own. */
-@media(max-width:640px){
-  .top{flex-wrap:wrap;align-items:flex-start;gap:9px;padding:26px 0 20px}
-  .brandline{flex:1 1 100%}
-  .when{flex:1 1 100%;text-align:left;white-space:normal;line-height:1.5}
-}
-.name{font-size:11.5px;letter-spacing:.34em;text-transform:uppercase;color:var(--gold);margin:0 0 10px;
-  opacity:.85}
-.h1{font-size:clamp(34px,10vw,60px);line-height:.98;letter-spacing:-.035em;margin:0;font-weight:600}
-.when{font-size:12px;color:var(--faint);text-align:right;letter-spacing:.04em;white-space:nowrap}
+/* The four of us, at the size of the thing it is. Everything else on this
+   page is a list; this is the reason for the list. */
+.hero-top{position:relative;overflow:hidden;border-radius:26px;margin:18px 0 22px;
+  height:clamp(250px,44vw,410px);background:#2a2136;
+  box-shadow:0 10px 34px rgba(25,19,37,.28)}
+.famshot{position:absolute;inset:0;width:100%;height:100%;display:block;
+  object-fit:cover;object-position:50% 36%}
+.hero-top::after{content:'';position:absolute;inset:26% 0 0 0;pointer-events:none;
+  background:linear-gradient(180deg,transparent,rgba(13,8,22,.88))}
+.hero-txt{position:absolute;z-index:1;left:clamp(20px,4vw,34px);right:clamp(20px,4vw,34px);
+  bottom:clamp(18px,3.4vw,28px)}
+.name{font-size:11.5px;letter-spacing:.34em;text-transform:uppercase;color:#ffc3d5;margin:0 0 9px;
+  text-shadow:0 1px 10px rgba(0,0,0,.55)}
+.h1{font-size:clamp(38px,11.5vw,74px);line-height:.93;letter-spacing:-.036em;margin:0;
+  font-weight:600;color:#fff;text-shadow:0 3px 24px rgba(0,0,0,.5)}
+.when{font-size:12.5px;color:rgba(255,255,255,.82);margin:11px 0 0;letter-spacing:.04em;
+  text-shadow:0 1px 8px rgba(0,0,0,.65)}
+.bstamp{opacity:.5;font-size:10.5px;letter-spacing:.08em;margin-left:9px}
 
 .tabs{display:flex;gap:4px;overflow-x:auto;padding:4px;background:var(--card);
   border:1px solid var(--line);box-shadow:var(--shadow);border-radius:14px;margin:2px 0 22px}
@@ -276,7 +276,7 @@ const MOTION = `
 }`;
 
 const BASE = 'https://pierceology.github.io/jnoir-elements/';
-const BUILD = '15 Sep 13:48';
+const BUILD = '15 Sep 13:51';
 
 const SCAN_CSS = `
 .scr{position:fixed;inset:0;z-index:100001;background:#0d0b09;
@@ -1301,22 +1301,26 @@ class PierceHousehold extends HTMLElement {
     if (!pets.length) return `<div class="card"><p class="empty">No animals on file.</p></div>`;
     const floors = {};
     pets.forEach(p => { const k = p.floor||'House'; (floors[k] = floors[k]||[]).push(p); });
-    return Object.entries(floors).map(([f,list])=>`
-      <div class="sect"><h2>${esc(f)}<span>${list.length}</span></h2><div class="rows pair">${list.map(p=>{
-        const food = String(p.food||'').split(',').map(x=>x.trim()).filter(Boolean);
+    return Object.entries(floors).map(([floor,list])=>`
+      <div class="sect"><h2>${esc(floor)}<span>${list.length}</span></h2>
+      <div class="grid three">${list.map(p=>{
+        const food  = String(p.food||'').split(',').map(x=>x.trim()).filter(Boolean);
         const armed = this.mode==='food' && this.foodPet===p.title;
-        return `
-        <div class="row" style="--acc:${esc(p.accent || (p.species==='Dog' ? '#e8a552' : '#7fb4d8'))}">
-          <span class="av">${avatarFor(p.title, p.species==='Dog'?'dog':'cat', p.sex, p.accent || (p.species==='Dog'?'#e8a552':'#7fb4d8'))}</span>
-          <div class="grow"><p class="rt">${esc(p.title)}</p>
-            <p class="rs">${[p.species==='?'?'species unconfirmed':p.species, p.sex,
-              p.sibling?`${p.sex==='Female'?'sister':p.sex==='Male'?'brother':'sibling'} of ${esc(p.sibling)}`:''].filter(Boolean).map(esc).join(' · ')}</p>
-            ${p.note?`<p class="rs">${esc(p.note)}</p>`:''}
-            ${food.length?`<div class="chips">${food.map(n=>`<span class="chip">${esc(n)}</span>`).join('')}</div>`:''}
+        const acc   = p.accent || (p.species==='Dog' ? '#e8a552' : '#7fb4d8');
+        const line  = [p.species==='?' ? 'species unconfirmed' : p.species, p.sex,
+          p.sibling ? `${p.sex==='Female'?'sister':p.sex==='Male'?'brother':'sibling'} of ${p.sibling}` : '']
+          .filter(Boolean).map(esc).join(' · ');
+        return `<div class="card person" style="--acc:${esc(acc)}">
+          <div class="face">${avatarFor(p.title, p.species==='Dog'?'dog':'cat', p.sex, acc)}
+            <p class="nm">${esc(p.title)}</p></div>
+          <div class="pbody">
+            <p class="rs" style="margin:0 0 3px">${line}</p>
+            ${p.note ? `<p class="rs" style="margin:0 0 10px">${esc(p.note)}</p>` : ''}
+            ${food.length ? `<div class="chips">${food.map(n=>`<span class="chip">${esc(n)}</span>`).join('')}</div>`
+                          : `<p class="empty">No food on file. Hit the button, then scan a bag.</p>`}
             <button class="ghost" data-food="${esc(p.title)}" aria-pressed="${armed}">${
-              armed ? 'Scanning food — tap to stop' : `Scan ${esc(p.title)}'s food`}</button></div>
-          ${food.length?`<span class="pill ok">${food.length} food${food.length===1?'':'s'}</span>`
-                      :`<span class="pill lo">no food on file</span>`}
+              armed ? 'Scanning food — tap to stop' : `Scan ${esc(p.title)}'s food`}</button>
+          </div>
         </div>`;}).join('')}</div></div>`).join('');
   }
 
@@ -1360,13 +1364,13 @@ class PierceHousehold extends HTMLElement {
     this.root.className = 'hh' + (this.view === 'money' ? ' money' : '');
     this.root.innerHTML = `
       <div class="wrap">
-        <header class="top">
-          <div class="brandline">
-            <span class="crest"><img src="${BASE}faces/fam-icon.jpg" alt="The Pierce household"></span>
-            <div><p class="name">Pierce Household</p><h1 class="h1">${
-              this.view === 'money' ? 'Expenses' : 'Dashboard'}</h1></div></div>
-          <p class="when">${new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}
-            <br><span style="opacity:.5;font-size:10.5px;letter-spacing:.08em">build ${BUILD}</span></p>
+        <header class="hero-top">
+          <img class="famshot" src="${BASE}faces/fam-wide.jpg" alt="Lacey, Pierce, Adom and Jordin">
+          <div class="hero-txt">
+            <p class="name">Pierce Household</p>
+            <h1 class="h1">${this.view === 'money' ? 'Expenses' : 'Dashboard'}</h1>
+            <p class="when">${new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}<span class="bstamp">build ${BUILD}</span></p>
+          </div>
         </header>
         <div class="tabs" role="tablist">${tabs.map(([k,l])=>
           `<button class="tab" role="tab" data-tab="${k}" aria-selected="${this.tab===k}">${l}</button>`).join('')}</div>
