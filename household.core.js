@@ -215,8 +215,23 @@ pierce-household, wix-default-custom-element { display:block; width:100%; overfl
 .type:active{transform:translateY(1px)}
 /* the typed-in search wears the scanner's shell, minus the camera */
 .scr.typing{background:#161122}
-/* the list is the whole point of this screen, so give it the room */
-.scr.typing .mine ul{max-height:min(48vh,430px)}
+/* The field sits under the header and the list takes the rest. The card used
+   to be pinned to the bottom, which is precisely where the keyboard arrives. */
+.finder{position:relative;flex:1;min-height:0;display:flex;flex-direction:column;
+  gap:10px;padding:2px 14px 14px}
+.finder input{flex:none;width:100%;appearance:none;background:#f5f1fc;border:1px solid var(--line);
+  border-radius:13px;color:var(--ink);font:400 16px/1.2 inherit;padding:14px 15px}
+.finder input::placeholder{color:var(--faint)}
+.finder ul{list-style:none;margin:0;padding:0;flex:1;min-height:0;overflow-y:auto;
+  -webkit-overflow-scrolling:touch}
+.finder li{margin-bottom:7px}
+.finder li button{width:100%;display:flex;align-items:center;gap:11px;appearance:none;cursor:pointer;
+  border:1px solid var(--line);border-radius:13px;background:#f5f1fc;color:var(--ink);
+  font:600 13.5px/1.3 inherit;padding:8px 11px;text-align:left}
+.finder li button:hover{background:#ece5f9;border-color:var(--fav)}
+.finder li button img{width:48px;height:48px;border-radius:10px;object-fit:contain;
+  background:#fff;flex:none;padding:3px}
+.finder li button span{flex:1;min-width:0}
 .modes{display:flex;gap:3px;padding:3px;background:var(--card);border:1px solid var(--line);border-radius:11px}
 .mode{flex:1;appearance:none;border:0;background:transparent;color:var(--dim);cursor:pointer;
   font:600 12.5px/1 inherit;padding:9px 6px;border-radius:8px;white-space:nowrap}
@@ -288,7 +303,7 @@ const MOTION = `
 }`;
 
 const BASE = 'https://pierceology.github.io/jnoir-elements/';
-const BUILD = '15 Sep 14:00';
+const BUILD = '15 Sep 14:04';
 
 const SCAN_CSS = `
 .scr{position:fixed;inset:0;z-index:100001;background:#0d0b09;
@@ -687,10 +702,15 @@ class PierceHousehold extends HTMLElement {
 
     const find = e.target.closest('[data-find]');
     if (find){
-      const cat = this._cat, k = find.dataset.find;
+      const w = this._scr, cat = this._cat, k = find.dataset.find;
       const prod = cat && cat.items[k];
-      const card = this._scr && this._scr.querySelector('.hit');
-      if (prod && card){ this.offer(prod, k, k, cat, card); this.mark('typed:hit:' + k); }
+      if (!w || !prod) return;
+      const finder = w.querySelector('.finder');
+      if (finder) finder.hidden = true;
+      let card = w.querySelector('.hit');
+      if (!card){ card = document.createElement('div'); card.className = 'hit'; w.appendChild(card); }
+      this.offer(prod, k, k, cat, card);
+      this.mark('typed:hit:' + k);
       return;
     }
 
@@ -952,6 +972,7 @@ class PierceHousehold extends HTMLElement {
      typed into the search when the barcode would not read. Same card, same
      questions, same commit, so there is only ever one of these to keep right. */
   offer(prod, key, code, cat, card){
+    this._typer = null;
     const aisle = (cat && cat.aisles && cat.aisles[prod.a]) || prod.d
                 || (prod._src === 'world' ? 'not a shop line' : '');
     this._pending = {upc:key, code, product:prod, aisle,
@@ -978,9 +999,12 @@ class PierceHousehold extends HTMLElement {
     const w = document.createElement('div');
     w.className = 'scr typing';
     w.innerHTML = `
-      <div class="top"><div class="what">Type it instead<small>Search the Stop &amp; Shop list, then the same questions.</small></div>
+      <div class="top"><div class="what">Type it</div>
         <button class="x" data-close-scan aria-label="close">&times;</button></div>
-      <div class="note">Loading the store list…</div>`;
+      <div class="finder">
+        <input type="search" inputmode="search" enterkeyhint="search" autocomplete="off"
+               autocorrect="off" autocapitalize="none" spellcheck="false" placeholder="What is it?">
+        <ul></ul></div>`;
     this.root.appendChild(w);
     this._scr = w;
     this._fit();
@@ -988,72 +1012,90 @@ class PierceHousehold extends HTMLElement {
 
     let cat;
     try { cat = await this.catalogue(); }
-    catch(err){
-      this.say('Could not load the store list. ' + ((err && err.message) || ''));
-      this.mark('typer:fail'); return;
-    }
-    const card = document.createElement('div');
-    card.className = 'hit';
-    w.appendChild(card);
-    this.search(undefined, card, cat);
+    catch(err){ this.mark('typer:fail'); return; }
+
+    /* Built once, and only the list inside it changes. Re-rendering the field
+       on every keystroke destroyed the input mid-word, which drops the caret to
+       the end of the line and, on a phone, shuts the keyboard and throws away
+       whatever autocorrect was doing. And the field lives at the top, because
+       the bottom of the screen is where the keyboard goes. */
+    const box  = w.querySelector('.finder input');
+    const list = w.querySelector('.finder ul');
+    this._typer = {list, cat};
+    let t = null;
+    box.addEventListener('input', () => {
+      clearTimeout(t);
+      t = setTimeout(() => this.results(box.value), 90);
+    });
+    box.addEventListener('keydown', e => {
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
+      const first = list.querySelector('button[data-find]');
+      if (first) first.click();
+    });
+    box.focus();
   }
 
-  search(filter, card, cat){
-    const q = String(filter||'').trim().toLowerCase();
+  results(q){
+    const t = this._typer; if (!t) return;
+    const s = String(q||'').trim().toLowerCase();
     let rows = [];
-    if (q.length >= 2){
-      const terms = q.split(/\s+/);
-      for (const k in cat.items){
-        const p = cat.items[k];
+    if (s){
+      const terms = s.split(/\s+/);
+      for (const k in t.cat.items){
+        const p = t.cat.items[k];
         const hay = ((p.n||'') + ' ' + (p.b||'') + ' ' + (p.c||'')).toLowerCase();
         let ok = true;
-        for (const t of terms) if (!hay.includes(t)) { ok = false; break; }
+        for (const w of terms) if (!hay.includes(w)) { ok = false; break; }
         if (!ok) continue;
         /* a name that starts with what you typed is what you meant */
-        rows.push([String(p.n||'').toLowerCase().startsWith(q) ? 0 : 1, String(p.n||''), k, p]);
+        rows.push([String(p.n||'').toLowerCase().startsWith(s) ? 0 : 1, String(p.n||''), k, p]);
         if (rows.length >= 400) break;
       }
       rows.sort((a,b)=> a[0]-b[0] || a[1].localeCompare(b[1]));
-      rows = rows.slice(0, 40);
+      rows = rows.slice(0, 50);
     }
-    const list = rows.map(r => `<li><button data-find="${esc(r[2])}">${
+    t.list.innerHTML = rows.map(r => `<li><button data-find="${esc(r[2])}">${
         r[3].i ? `<img src="${esc(r[3].i)}" alt="">` : ''}<span>${esc(r[3].n)}${
-        r[3].s ? ' · ' + esc(r[3].s) : ''}</span></button></li>`).join('')
-      || `<li><p class="empty">${q.length < 2 ? 'Two letters and it starts looking.'
-                                              : 'Nothing on the shop list matches that.'}</p></li>`;
-    card.innerHTML = `<div class="mine"><input placeholder="Ritz, bananas, cat litter…" value="${esc(filter||'')}">
-      <ul>${list}</ul></div>`;
-    const box = card.querySelector('.mine input');
-    if (box){
-      box.oninput = () => { const v = box.value; this.search(v, card, cat);
-        const nb = card.querySelector('.mine input');
-        if (nb){ nb.focus(); nb.setSelectionRange(v.length, v.length); } };
-      if (filter === undefined) box.focus();
-    }
-    this.say(rows.length ? `${rows.length} on the shelf. Pick one.` : 'What is it called?');
+        r[3].s ? ' · ' + esc(r[3].s) : ''}</span></button></li>`).join('');
+  }
+
+  /* The next thing is usually in the same bag. Hand the search back rather
+     than making you close it and start again. */
+  typeAgain(){
+    const w = this._scr;
+    if (!w || !w.classList.contains('typing')) return;
+    const hit = w.querySelector('.hit'); if (hit) hit.remove();
+    const finder = w.querySelector('.finder'); if (!finder) return;
+    finder.hidden = false;
+    const box = finder.querySelector('input');
+    if (box){ box.value = ''; this.results(''); box.focus(); }
   }
 
   /* A can out of a 24-pack has its own barcode the shop never sells. Point it at
      something already in the house and it is known from then on. */
-  pickMine(filter){
+  pickMine(){
     const card = this._scr && this._scr.querySelector('.hit'); if (!card) return;
-    const q = String(filter||'').trim().toLowerCase();
-    const items = (this.data.items||[])
-      .filter(i => !q || (i.title||'').toLowerCase().includes(q))
-      .slice(0, 40);
-    const list = items.map(i => `<li><button data-bind="${esc(i._id)}">${
-        i.image ? `<img src="${esc(i.image)}" alt="">` : ''}<span>${esc(i.title)}</span></button></li>`).join('')
-      || `<li><p class="empty">Nothing matches that.</p></li>`;
     const slot = card.querySelector('.ask') || card.querySelector('.mine');
-    const html = `<div class="mine"><input placeholder="Which one is it?" value="${esc(filter||'')}">
-      <ul>${list}</ul></div>`;
-    if (slot) slot.outerHTML = html;
-    const box = card.querySelector('.mine input');
-    if (box){
-      box.oninput = () => { const v = box.value; this.pickMine(v);
-        const nb = this._scr.querySelector('.mine input'); if (nb){ nb.focus(); nb.setSelectionRange(v.length,v.length); } };
-      if (filter === undefined) box.focus();
-    }
+    if (slot) slot.outerHTML = `<div class="mine">
+      <input type="search" inputmode="search" autocomplete="off" autocorrect="off"
+             autocapitalize="none" spellcheck="false" placeholder="Which one is it?">
+      <ul></ul></div>`;
+    const box  = card.querySelector('.mine input');
+    const list = card.querySelector('.mine ul');
+    if (!box || !list) return;
+    const draw = q => {
+      const s = String(q||'').trim().toLowerCase();
+      const items = (this.data.items||[])
+        .filter(i => !s || (i.title||'').toLowerCase().includes(s)).slice(0, 40);
+      list.innerHTML = items.map(i => `<li><button data-bind="${esc(i._id)}">${
+          i.image ? `<img src="${esc(i.image)}" alt="">` : ''}<span>${esc(i.title)}</span></button></li>`).join('')
+        || `<li><p class="empty">Nothing matches that.</p></li>`;
+    };
+    let t = null;
+    box.addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => draw(box.value), 90); });
+    draw('');
+    box.focus();
     this.say('Pick what it is.');
   }
 
@@ -1118,6 +1160,7 @@ class PierceHousehold extends HTMLElement {
     this.say(`${this._seen} done. Next one.`);
     if (navigator.vibrate) { try { navigator.vibrate([10,40,10]); } catch(_) {} }
     if (this._scr) this._scr.classList.remove('busy');
+    if (this._scr && this._scr.classList.contains('typing')) setTimeout(() => this.typeAgain(), 950);
   }
 
   /* What a scan means, worked out here where a push is the whole deployment. */
