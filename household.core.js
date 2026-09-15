@@ -82,7 +82,7 @@ pierce-household, wix-default-custom-element { display:block; width:100%; overfl
   .tab{flex:0 0 auto;padding:11px 22px;font-size:14.5px}
 }
 .tab{flex:1 1 auto;appearance:none;border:0;background:transparent;color:var(--dim);
-  font:600 13.5px/1 inherit;letter-spacing:.01em;padding:10px 9px;border-radius:9px;cursor:pointer;
+  font-weight:600;font-size:13.5px;line-height:1;letter-spacing:.01em;padding:10px 9px;border-radius:9px;cursor:pointer;
   transition:background .16s,color .16s;white-space:nowrap}
 .tab[aria-selected="true"]{background:var(--ink);color:#fff}
 
@@ -115,7 +115,7 @@ pierce-household, wix-default-custom-element { display:block; width:100%; overfl
   background:#fff;border:1px solid var(--line);display:grid;place-items:center;
   box-shadow:0 2px 7px rgba(25,19,37,.10)}
 .thumb img{width:100%;height:100%;object-fit:contain;background:#fff;display:block}
-.thumb .ltr{font:400 32px/1 inherit;width:100%;height:100%;display:grid;place-items:center;
+.thumb .ltr{font-weight:400;font-size:32px;line-height:1;width:100%;height:100%;display:grid;place-items:center;
   background:color-mix(in srgb,var(--acc) 16%,#fff)}
 .row.item{gap:11px;padding:12px 13px}
 .row.item .rs{font-size:11.5px}
@@ -156,7 +156,7 @@ pierce-household, wix-default-custom-element { display:block; width:100%; overfl
 
 .step{display:flex;align-items:center;gap:2px;flex:none}
 .step button{appearance:none;width:30px;height:30px;border-radius:9px;border:1px solid var(--line);
-  background:#f4f1fb;color:var(--ink);font:600 17px/1 inherit;cursor:pointer}
+  background:#f4f1fb;color:var(--ink);font-weight:600;font-size:17px;line-height:1;cursor:pointer}
 .step button:active{background:#e9e4f7}
 .qty{min-width:34px;text-align:center;font-variant-numeric:tabular-nums;font-weight:600;font-size:15px}
 .qty small{display:block;font-size:10px;font-weight:400;color:var(--faint);letter-spacing:.04em}
@@ -170,18 +170,18 @@ pierce-household, wix-default-custom-element { display:block; width:100%; overfl
   box-shadow:var(--shadow);border-radius:12px;margin:0 0 16px}
 @media(min-width:820px){ .groupby{display:inline-flex;margin-right:12px;vertical-align:top} }
 .gb{flex:1;appearance:none;border:0;background:transparent;color:var(--dim);cursor:pointer;
-  font:600 12.5px/1 inherit;padding:9px 14px;border-radius:8px;white-space:nowrap}
+  font-weight:600;font-size:12.5px;line-height:1;padding:9px 14px;border-radius:8px;white-space:nowrap}
 .gb[aria-selected="true"]{background:var(--ink);color:#fff}
 .brand{color:var(--gold);font-weight:600}
 .kitchenhead{display:flex;flex-wrap:wrap;gap:0 12px;align-items:flex-start}
 @media(min-width:820px){ .kitchenhead .find{flex:1;min-width:260px;margin-bottom:16px} }
 .find{width:100%;appearance:none;background:var(--card);box-shadow:var(--shadow);border:1px solid var(--line);
-  border-radius:12px;color:var(--ink);font:400 15px/1 inherit;padding:14px 16px;margin:0 0 16px}
+  border-radius:12px;color:var(--ink);font-weight:400;font-size:16px;line-height:1;padding:14px 16px;margin:0 0 16px}
 .find::placeholder{color:var(--faint)}
 
 .who{display:flex;align-items:center;gap:12px;margin-bottom:12px}
 .av{width:62px;height:62px;border-radius:19px;display:grid;place-items:center;
-  font:700 17px/1 inherit;color:#191325;flex:none;overflow:hidden;background:#f1ecfa;
+  font-weight:700;font-size:17px;line-height:1;color:#191325;flex:none;overflow:hidden;background:#f1ecfa;
   border:2px solid #fff;box-shadow:0 2px 8px rgba(25,19,37,.14)}
 .av svg{width:100%;height:100%;display:block}
 .av img{width:100%;height:100%;display:block;object-fit:cover}
@@ -191,8 +191,12 @@ pierce-household, wix-default-custom-element { display:block; width:100%; overfl
   border:1px solid var(--line);color:var(--dim)}
 .empty{font-size:13px;color:var(--faint);font-style:italic;margin:0}
 .ghost{appearance:none;width:100%;margin-top:13px;background:#faf8ff;color:var(--fav);
-  border:1px dashed #cfc6ea;border-radius:11px;font:600 13px/1 inherit;padding:12px;cursor:pointer}
+  border:1px dashed #cfc6ea;border-radius:11px;font-weight:600;font-size:13px;line-height:1;padding:12px;cursor:pointer}
 .ghost:active{background:#f0ecfd}
+.acts{display:flex;gap:7px;margin-top:13px}
+.acts .ghost{margin-top:0;flex:1;padding:12px 8px}
+.finder li button.added{background:rgba(12,166,120,.14);border-color:var(--good);color:var(--good)}
+.finder li button.added::after{content:'✓';margin-left:auto;font-weight:700;flex:none}
 .ghost[aria-pressed="true"]{border-style:solid;border-color:var(--fav);background:rgba(199,138,214,.09)}
 
 .scanbar{position:fixed;left:0;right:0;bottom:0;padding:12px 20px calc(14px + env(safe-area-inset-bottom));
@@ -208,7 +212,7 @@ pierce-household, wix-default-custom-element { display:block; width:100%; overfl
 .scaninner{max-width:720px;margin:0 auto;display:flex;align-items:stretch;gap:9px}
 .scaninner .scan{flex:1;min-width:0}
 .type{appearance:none;flex:none;border:1px solid rgba(255,255,255,.3);border-radius:16px;cursor:pointer;
-  background:#221c33;color:#fff;font:700 14.5px/1 inherit;padding:17px 17px;white-space:nowrap;
+  background:#221c33;color:#fff;font-weight:700;font-size:14.5px;line-height:1;padding:17px 17px;white-space:nowrap;
   display:flex;align-items:center;gap:8px;box-shadow:0 8px 30px rgba(0,0,0,.34)}
 .type svg{width:17px;height:17px;flex:none}
 .type:hover{background:#2c2442}
@@ -223,14 +227,16 @@ pierce-household, wix-default-custom-element { display:block; width:100%; overfl
    list carries on showing through the card you just picked */
 .finder[hidden]{display:none}
 .finder input{flex:none;width:100%;appearance:none;background:#f5f1fc;border:1px solid var(--line);
-  border-radius:13px;color:var(--ink);font:400 16px/1.2 inherit;padding:14px 15px}
+  border-radius:13px;color:var(--ink);font-weight:400;line-height:1.25;padding:14px 15px;
+  /* 16px or iOS zooms the page the moment this takes focus */
+  font-size:16px}
 .finder input::placeholder{color:var(--faint)}
 .finder ul{list-style:none;margin:0;padding:0;flex:1;min-height:0;overflow-y:auto;
   -webkit-overflow-scrolling:touch}
 .finder li{margin-bottom:7px}
 .finder li button{width:100%;display:flex;align-items:center;gap:11px;appearance:none;cursor:pointer;
   border:1px solid var(--line);border-radius:13px;background:#f5f1fc;color:var(--ink);
-  font:600 14px/1.32 inherit;padding:9px 11px;text-align:left;min-height:62px}
+  font-weight:600;font-size:14px;line-height:1.32;padding:9px 11px;text-align:left;min-height:62px}
 .finder li button:hover{background:#ece5f9;border-color:var(--fav)}
 .finder li button img{width:48px;height:48px;border-radius:10px;object-fit:contain;
   background:#fff;flex:none;padding:3px}
@@ -238,11 +244,11 @@ pierce-household, wix-default-custom-element { display:block; width:100%; overfl
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .modes{display:flex;gap:3px;padding:3px;background:var(--card);border:1px solid var(--line);border-radius:11px}
 .mode{flex:1;appearance:none;border:0;background:transparent;color:var(--dim);cursor:pointer;
-  font:600 12.5px/1 inherit;padding:9px 6px;border-radius:8px;white-space:nowrap}
+  font-weight:600;font-size:12.5px;line-height:1;padding:9px 6px;border-radius:8px;white-space:nowrap}
 .mode[aria-selected="true"]{background:#efe9f8;color:var(--ink)}
 .mode[aria-selected="true"][data-mode="fav"]{color:var(--fav)}
 .scan{width:100%;appearance:none;border:0;border-radius:16px;cursor:pointer;
-  background:linear-gradient(100deg,var(--gold),var(--mango));color:#fff;font:700 16px/1 inherit;padding:17px;
+  background:linear-gradient(100deg,var(--gold),var(--mango));color:#fff;font-weight:700;font-size:16px;line-height:1;padding:17px;
   animation:breathe 3.6s ease-in-out infinite;
   display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 8px 30px rgba(0,0,0,.5)}
 .scan.fav{background:linear-gradient(100deg,var(--fav),#9a7de0)}
@@ -307,7 +313,7 @@ const MOTION = `
 }`;
 
 const BASE = 'https://pierceology.github.io/jnoir-elements/';
-const BUILD = '15 Sep 14:07';
+const BUILD = '15 Sep 14:17';
 
 const SCAN_CSS = `
 .scr{position:fixed;inset:0;z-index:100001;background:#0d0b09;max-width:100vw;overflow:hidden;
@@ -318,10 +324,10 @@ const SCAN_CSS = `
   linear-gradient(rgba(13,11,9,.72),rgba(13,11,9,.16) 28%,rgba(13,11,9,.16) 72%,rgba(13,11,9,.86))}
 .scr .top{position:relative;flex:none;display:flex;align-items:center;justify-content:space-between;
   gap:12px;padding:calc(14px + env(safe-area-inset-top)) 18px 14px}
-.scr .what{font:700 15px/1.25 inherit}
-.scr .what small{display:block;font:400 12.5px/1.3 inherit;color:rgba(244,239,251,.72);margin-top:3px}
+.scr .what{font-weight:700;font-size:15px;line-height:1.25}
+.scr .what small{display:block;font-weight:400;font-size:12.5px;line-height:1.3;color:rgba(244,239,251,.72);margin-top:3px}
 .scr .x{appearance:none;border:1px solid rgba(255,255,255,.34);background:rgba(0,0,0,.5);
-  color:#fff;width:40px;height:40px;border-radius:50%;font:600 19px/1 inherit;cursor:pointer;flex:none}
+  color:#fff;width:40px;height:40px;border-radius:50%;font-weight:600;font-size:19px;line-height:1;cursor:pointer;flex:none}
 .scr .frame{position:relative;flex:1;min-height:0;display:grid;place-items:center;padding:0 30px}
 .scr .box{position:relative;width:min(78vw,380px);aspect-ratio:1;border-radius:22px;
   box-shadow:0 0 0 100vmax rgba(13,11,9,.42)}
@@ -349,20 +355,20 @@ const SCAN_CSS = `
   background:#fff;flex:none;overflow:hidden;display:grid;place-items:center;
   box-shadow:0 3px 14px rgba(0,0,0,.28)}
 .hit .shot img{width:100%;height:100%;object-fit:contain;padding:6px}
-.hit .shot span{color:#17130f;font:700 44px/1 inherit;width:100%;height:100%;display:grid;
+.hit .shot span{color:#17130f;font-weight:700;font-size:44px;line-height:1;width:100%;height:100%;display:grid;
   place-items:center;background:var(--gold)}
 .hit .txt{flex:1;min-width:0}
 .hit .txt b{display:block;font-size:17px;font-weight:600;line-height:1.22}
 .hit .txt em{display:block;font-style:normal;font-size:12.5px;color:var(--dim);margin-top:6px;line-height:1.4}
 .hit{flex-wrap:wrap}
-.hit .tick{font:700 12px/1 inherit;letter-spacing:.08em;text-transform:uppercase;
+.hit .tick{font-weight:700;font-size:12px;line-height:1;letter-spacing:.08em;text-transform:uppercase;
   padding:7px 11px;border-radius:99px;white-space:nowrap;flex:none}
 .tick.wide{flex:0 0 100%;min-width:0;max-width:100%;text-align:center;margin-top:4px;padding:10px;
   white-space:normal;line-height:1.35}
 .ask{flex:0 0 100%;min-width:0;max-width:100%;display:flex;flex-wrap:wrap;gap:7px;margin-top:2px}
 .ask button{min-width:0}
 .ask button{flex:1 1 30%;appearance:none;border:1px solid var(--line);border-radius:11px;cursor:pointer;
-  background:#f5f1fc;color:var(--ink);font:600 13px/1.15 inherit;padding:11px 6px;
+  background:#f5f1fc;color:var(--ink);font-weight:600;font-size:13px;line-height:1.15;padding:11px 6px;
   transition:transform .14s,background .14s,border-color .14s}
 .ask button:active{transform:scale(.96);background:#ece5f9}
 .ask button b{display:block;font-size:11px;font-weight:700;letter-spacing:.06em;opacity:.62;margin-top:3px}
@@ -373,19 +379,20 @@ const SCAN_CSS = `
 .who-pick{flex:0 0 100%;min-width:0;max-width:100%;display:flex;flex-wrap:wrap;gap:7px;margin-top:2px}
 .who-pick button{flex:1 1 44%;display:flex;align-items:center;gap:8px;appearance:none;cursor:pointer;
   border:1px solid var(--line);border-radius:11px;background:#f5f1fc;color:var(--ink);
-  font:600 13px/1 inherit;padding:8px 10px}
+  font-weight:600;font-size:13px;line-height:1;padding:8px 10px}
 .who-pick .av{width:34px;height:34px;border-radius:11px;border-width:1.5px}
 .mine{flex:0 0 100%;margin-top:4px;min-width:0;max-width:100%}
 .mine ul,.mine li{min-width:0;max-width:100%}
 .mine button{max-width:100%}
 .mine input{width:100%;appearance:none;background:#f5f1fc;border:1px solid var(--line);
-  border-radius:11px;color:var(--ink);font:400 14px/1 inherit;padding:12px 13px}
+  border-radius:11px;color:var(--ink);font-weight:400;line-height:1.25;padding:12px 13px;
+  font-size:16px}
 .mine input::placeholder{color:var(--faint)}
 .mine ul{list-style:none;margin:8px 0 0;padding:0;max-height:190px;overflow-y:auto}
 .mine li{margin-bottom:6px}
 .mine button{width:100%;display:flex;align-items:center;gap:11px;appearance:none;cursor:pointer;
   border:1px solid var(--line);border-radius:13px;background:#f5f1fc;color:var(--ink);
-  font:600 13.5px/1.3 inherit;padding:8px 11px;text-align:left}
+  font-weight:600;font-size:13.5px;line-height:1.3;padding:8px 11px;text-align:left}
 .mine button:hover{background:#ece5f9;border-color:var(--fav)}
 .mine button img{width:48px;height:48px;border-radius:10px;object-fit:contain;background:#fff;
   flex:none;padding:3px}
@@ -401,7 +408,7 @@ const SCAN_CSS = `
 .face::after{content:'';position:absolute;inset:44% 0 0 0;pointer-events:none;
   background:linear-gradient(180deg,transparent,rgba(18,12,28,.78))}
 .face .nm{position:absolute;z-index:1;left:17px;right:17px;bottom:13px;margin:0;color:#fff;
-  font:600 clamp(21px,5.6vw,26px)/1.08 inherit;letter-spacing:-.025em;
+  font-weight:600;font-size:clamp(21px,5.6vw,26px);line-height:1.08;letter-spacing:-.025em;
   text-shadow:0 2px 14px rgba(0,0,0,.45)}
 .pbody{padding:15px 18px 18px}
 
@@ -411,7 +418,7 @@ const SCAN_CSS = `
 .hero h2{margin:0;font-size:clamp(30px,9vw,46px);line-height:1;letter-spacing:-.03em;font-weight:600}
 .hero p{margin:8px 0 0;font-size:13px;color:var(--dim)}
 .back{appearance:none;border:1px solid var(--line);background:var(--card);box-shadow:var(--shadow);color:var(--dim);
-  border-radius:99px;font:600 13px/1 inherit;padding:10px 16px;cursor:pointer;margin:4px 0 0}
+  border-radius:99px;font-weight:600;font-size:13px;line-height:1;padding:10px 16px;cursor:pointer;margin:4px 0 0}
 .back:active{transform:scale(.96)}
 .favs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 @media(min-width:620px){ .favs{grid-template-columns:repeat(3,minmax(0,1fr))} }
@@ -420,7 +427,7 @@ const SCAN_CSS = `
   border-radius:18px;padding:12px;min-width:0}
 .fav .shelf{aspect-ratio:1;border-radius:11px;overflow:hidden;background:#fff;display:grid;place-items:center}
 .fav .shelf img{width:100%;height:100%;object-fit:contain}
-.fav .shelf span{width:100%;height:100%;display:grid;place-items:center;font:400 40px/1 inherit;
+.fav .shelf span{width:100%;height:100%;display:grid;place-items:center;font-weight:400;font-size:40px;line-height:1;
   background:color-mix(in srgb,var(--acc,#ff5c8a) 16%,#fff)}
 .fav b{display:block;font-size:13px;font-weight:600;margin-top:10px;line-height:1.3;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -715,6 +722,20 @@ class PierceHousehold extends HTMLElement {
       const w = this._scr, cat = this._cat, k = find.dataset.find;
       const prod = cat && cat.items[k];
       if (!w || !prod) return;
+      /* Opened from a person or an animal, every tap is that one answer, so
+         take it and stay on the list. Walking the shop adding favourites
+         should not be four taps a tin. */
+      const who = this.mode === 'fav' ? this.favPerson
+                : this.mode === 'food' ? this.foodPet : null;
+      if (who){
+        this.commit(this.mode, who, this.pendingFor(prod, k, k, cat));
+        this._seen = (this._seen||0) + 1;
+        find.classList.add('added');
+        find.disabled = true;
+        this.mark('typed:' + this.mode + ':' + k);
+        if (navigator.vibrate) { try { navigator.vibrate(14); } catch(_) {} }
+        return;
+      }
       const finder = w.querySelector('.finder');
       if (finder) finder.hidden = true;
       let card = w.querySelector('.hit');
@@ -725,6 +746,17 @@ class PierceHousehold extends HTMLElement {
     }
 
     if (e.target.closest('[data-type]')){ this.openTyper(); return; }
+
+    const ft = e.target.closest('[data-favtype]');
+    if (ft){
+      this.mode = 'fav'; this.favPerson = ft.dataset.favtype; this.foodPet = null;
+      this.render(); this.openTyper(); return;
+    }
+    const pt = e.target.closest('[data-foodtype]');
+    if (pt){
+      this.mode = 'food'; this.foodPet = pt.dataset.foodtype; this.favPerson = null;
+      this.render(); this.openTyper(); return;
+    }
 
     const pick = e.target.closest('[data-pick]');
     if (pick){ this.decide('fav', pick.dataset.pick); return; }
@@ -981,12 +1013,18 @@ class PierceHousehold extends HTMLElement {
   /* The card a product gets, however we came to it — read off a barcode, or
      typed into the search when the barcode would not read. Same card, same
      questions, same commit, so there is only ever one of these to keep right. */
-  offer(prod, key, code, cat, card){
-    this._typer = null;
+  pendingFor(prod, key, code, cat){
     const aisle = (cat && cat.aisles && cat.aisles[prod.a]) || prod.d
                 || (prod._src === 'world' ? 'not a shop line' : '');
-    this._pending = {upc:key, code, product:prod, aisle,
+    return {upc:key, code, product:prod, aisle,
       aisleOrder: /^\d+$/.test(prod.a) ? 5 : 20 + (parseInt(prod.a,10) || 50)};
+  }
+
+  offer(prod, key, code, cat, card){
+    this._typer = null;
+    const p = this.pendingFor(prod, key, code, cat);
+    const aisle = p.aisle;
+    this._pending = p;
     card.innerHTML = `
       <span class="shot">${prod.i ? `<img src="${esc(prod.i)}" alt="">`
                                   : `<span>${esc(String(prod.n||'?').trim()[0]||'?')}</span>`}</span>
@@ -1009,7 +1047,9 @@ class PierceHousehold extends HTMLElement {
     const w = document.createElement('div');
     w.className = 'scr typing';
     w.innerHTML = `
-      <div class="top"><div class="what">Type it</div>
+      <div class="top"><div class="what">${esc(this.mode === 'fav' && this.favPerson
+          ? this.favPerson.split(' ')[0] + "'s favourites"
+          : this.mode === 'food' && this.foodPet ? this.foodPet + "'s food" : 'Type it')}</div>
         <button class="x" data-close-scan aria-label="close">&times;</button></div>
       <div class="finder">
         <input type="search" inputmode="search" enterkeyhint="search" autocomplete="off"
@@ -1450,8 +1490,11 @@ class PierceHousehold extends HTMLElement {
                        : `<p class="empty">No favourites yet. Hit the button, then scan whatever ${esc(p.title.split(' ')[0])} loves.</p>`}
           ${no.length ? `<p class="klabel" style="margin:14px 0 7px">Never buy</p>
             <div class="chips">${no.map(f=>`<span class="chip">${esc(f)}</span>`).join('')}</div>` : ''}
-          <button class="ghost" data-fav="${esc(p.title)}" aria-pressed="${armed}">${
-            armed ? 'Scanning favourites — tap to stop' : `Scan ${esc(p.title.split(' ')[0])}'s favourites`}</button>
+          <div class="acts">
+            <button class="ghost" data-fav="${esc(p.title)}" aria-pressed="${armed}">${
+              armed ? 'Scanning — stop' : 'Scan'}</button>
+            <button class="ghost" data-favtype="${esc(p.title)}">Find in store</button>
+          </div>
         </div>
       </div>`;}).join('')}</div>`;
   }
@@ -1478,8 +1521,11 @@ class PierceHousehold extends HTMLElement {
             ${p.note ? `<p class="rs" style="margin:0 0 10px">${esc(p.note)}</p>` : ''}
             ${food.length ? `<div class="chips">${food.map(n=>`<span class="chip">${esc(n)}</span>`).join('')}</div>`
                           : `<p class="empty">No food on file. Hit the button, then scan a bag.</p>`}
-            <button class="ghost" data-food="${esc(p.title)}" aria-pressed="${armed}">${
-              armed ? 'Scanning food — tap to stop' : `Scan ${esc(p.title)}'s food`}</button>
+            <div class="acts">
+              <button class="ghost" data-food="${esc(p.title)}" aria-pressed="${armed}">${
+                armed ? 'Scanning — stop' : 'Scan'}</button>
+              <button class="ghost" data-foodtype="${esc(p.title)}">Find in store</button>
+            </div>
           </div>
         </div>`;}).join('')}</div></div>`).join('');
   }
