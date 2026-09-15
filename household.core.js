@@ -17,12 +17,7 @@ pierce-household, wix-default-custom-element { display:block; width:100%; overfl
   --shadow:0 1px 2px rgba(25,19,37,.06), 0 8px 24px rgba(25,19,37,.10);
   /* Two glows, not four. Four accents at low opacity is what made this feel
      like it might blow away; two at strength give it somewhere to stand. */
-  background:
-    radial-gradient(1200px 700px at 4% -12%, rgba(232,56,111,.38), transparent 62%),
-    radial-gradient(980px 640px at 100% 2%, rgba(103,65,217,.34), transparent 60%),
-    radial-gradient(1000px 620px at 52% 112%, rgba(244,114,43,.22), transparent 66%),
-    linear-gradient(180deg, #fdf7fc 0%, var(--bg) 44%, #c9b7e6 100%);
-  background-attachment:scroll;
+  background:var(--bg);
   color:var(--ink);
   font:400 16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,system-ui,sans-serif;
   -webkit-font-smoothing:antialiased; text-wrap:pretty;
@@ -35,6 +30,19 @@ pierce-household, wix-default-custom-element { display:block; width:100%; overfl
 /* Full width without leaving the page flow. No transform here on purpose -
    a transform on this would break the camera overlay's position:fixed. */
 .hh{position:relative;left:50%;width:100vw;margin-left:-50vw;overflow-x:clip}
+/* The glow is a layer of its own, pinned to the top and the bottom of the
+   page, so the colour is where you are rather than smeared over the whole
+   scroll. Behind the content, never over it. */
+.hh::before,.hh::after{content:'';position:absolute;left:0;right:0;z-index:0;pointer-events:none}
+.hh::before{top:0;height:min(1150px,150vh);
+  background:
+    radial-gradient(1200px 720px at 2% -14%, rgba(232,56,111,.42), transparent 62%),
+    radial-gradient(1000px 660px at 100% -2%, rgba(103,65,217,.40), transparent 60%),
+    linear-gradient(180deg, #fffaff 0%, rgba(255,250,255,0) 78%)}
+.hh::after{bottom:0;height:min(900px,110vh);
+  background:
+    radial-gradient(1100px 680px at 50% 116%, rgba(244,114,43,.30), transparent 64%),
+    linear-gradient(180deg, rgba(201,183,230,0) 0%, rgba(193,172,226,.85) 100%)}
 .wrap{max-width:760px;margin:0 auto;padding:0 20px;position:relative;z-index:1}
 /* depth belongs in the backdrop, never as a veil over the content */
 @media(min-width:1000px){ .wrap{max-width:1140px;padding:0 32px} }
@@ -83,6 +91,8 @@ pierce-household, wix-default-custom-element { display:block; width:100%; overfl
 .two{grid-template-columns:repeat(2,1fr)}
 .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
 .stats > :first-child{grid-column:1 / -1;padding:24px}
+.stats.duo > :first-child{grid-column:auto;padding:18px 19px}
+.stats.duo .big{font-size:clamp(30px,9.5vw,40px)}
 .stats > :first-child .big{font-size:clamp(44px,15vw,68px)}
 @media(min-width:820px){ .stats > :first-child{grid-column:auto;padding:17px 18px}
   .stats > :first-child .big{font-size:clamp(23px,7.2vw,31px)} }
@@ -266,7 +276,7 @@ const MOTION = `
 }`;
 
 const BASE = 'https://pierceology.github.io/jnoir-elements/';
-const BUILD = '15 Sep 13:47';
+const BUILD = '15 Sep 13:48';
 
 const SCAN_CSS = `
 .scr{position:fixed;inset:0;z-index:100001;background:#0d0b09;
@@ -1120,7 +1130,7 @@ class PierceHousehold extends HTMLElement {
     const noUpc = items.filter(i => !(i.upc||'').trim()).length;
     const gone = items.filter(i => /OUT OF STOCK/.test(i.notes||''));
     return `
-      <div class="grid stats">
+      <div class="grid stats duo">
         <div class="card"><p class="klabel">In the house</p><p class="big" data-to="${items.length}">${items.length}</p>
           <p class="sub">${floors.size} location${floors.size===1?'':'s'}</p></div>
         <div class="card tap" data-jump="low" role="button" tabindex="0">
