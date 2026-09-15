@@ -11,15 +11,16 @@ const CSS = `
 :host, .hh * { box-sizing: border-box; }
 pierce-household, wix-default-custom-element { display:block; width:100%; overflow:visible; }
 .hh{
-  --ink:#17131f; --dim:#6f6880; --faint:#a49db4;
-  --bg:#f7f4ff; --bg2:#ffffff; --card:#ffffff; --card2:#ffffff; --line:#e6e1f2;
-  --gold:#ff5c8a; --mango:#ff8a3d; --good:#12b886; --warn:#f59f00; --bad:#fa5252; --fav:#7c5cff;
-  --shadow:0 2px 6px rgba(23,19,31,.05), 0 10px 26px rgba(23,19,31,.06);
+  --ink:#191325; --dim:#5f5773; --faint:#948ca8;
+  --bg:#efe9f8; --bg2:#ffffff; --card:#ffffff; --card2:#ffffff; --line:#ddd4ee;
+  --gold:#e8386f; --mango:#f4722b; --good:#0ca678; --warn:#e07c0a; --bad:#e03131; --fav:#6741d9;
+  --shadow:0 1px 2px rgba(25,19,37,.06), 0 8px 24px rgba(25,19,37,.10);
+  /* Two glows, not four. Four accents at low opacity is what made this feel
+     like it might blow away; two at strength give it somewhere to stand. */
   background:
-    radial-gradient(1100px 640px at 8% -8%, rgba(255,92,138,.20), transparent 58%),
-    radial-gradient(900px 560px at 96% 2%, rgba(124,92,255,.16), transparent 56%),
-    radial-gradient(800px 540px at 50% 102%, rgba(18,184,134,.12), transparent 60%),
-    linear-gradient(180deg, #ffffff 0%, var(--bg) 46%, #eef0ff 100%);
+    radial-gradient(1200px 700px at 4% -12%, rgba(232,56,111,.30), transparent 62%),
+    radial-gradient(980px 640px at 100% 2%, rgba(103,65,217,.26), transparent 60%),
+    linear-gradient(180deg, #fdfaff 0%, var(--bg) 50%, #ded3f2 100%);
   color:var(--ink);
   font:400 16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,system-ui,sans-serif;
   -webkit-font-smoothing:antialiased; text-wrap:pretty;
@@ -47,10 +48,10 @@ pierce-household, wix-default-custom-element { display:block; width:100%; overfl
 
 .top{padding:34px 0 26px;display:flex;align-items:flex-end;justify-content:space-between;gap:16px}
 .brandline{display:flex;align-items:center;gap:15px;min-width:0}
-.crest{width:56px;height:56px;border-radius:19px;overflow:hidden;flex:none;
-  border:2px solid #fff;box-shadow:var(--shadow);background:#f4f1fb}
+.crest{width:66px;height:66px;border-radius:22px;overflow:hidden;flex:none;
+  border:2.5px solid #fff;box-shadow:0 3px 12px rgba(25,19,37,.18);background:#f1ecfa}
 .crest img{width:100%;height:100%;object-fit:cover;display:block}
-@media(max-width:420px){ .crest{width:46px;height:46px;border-radius:15px} }
+@media(max-width:420px){ .crest{width:54px;height:54px;border-radius:18px} }
 @media(min-width:820px){ .top{padding:56px 0 30px} .when{font-size:13px} }
 .name{font-size:11.5px;letter-spacing:.34em;text-transform:uppercase;color:var(--gold);margin:0 0 10px;
   opacity:.85}
@@ -81,7 +82,7 @@ pierce-household, wix-default-custom-element { display:block; width:100%; overfl
 
 .card{background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);
   border-radius:18px;padding:18px 19px;transition:transform .18s cubic-bezier(.2,.9,.3,1),box-shadow .18s}
-.card:hover{box-shadow:0 4px 10px rgba(23,19,31,.07), 0 16px 36px rgba(23,19,31,.10)}
+.card:hover{box-shadow:0 2px 6px rgba(25,19,37,.09), 0 18px 44px rgba(25,19,37,.16)}
 
 /* a section wears its aisle's colour */
 .sect{--acc:var(--gold)}
@@ -159,8 +160,9 @@ pierce-household, wix-default-custom-element { display:block; width:100%; overfl
 .find::placeholder{color:var(--faint)}
 
 .who{display:flex;align-items:center;gap:12px;margin-bottom:12px}
-.av{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;
-  font:700 14px/1 inherit;color:#17131f;flex:none;overflow:hidden;background:#f4f1fb}
+.av{width:62px;height:62px;border-radius:19px;display:grid;place-items:center;
+  font:700 17px/1 inherit;color:#191325;flex:none;overflow:hidden;background:#f1ecfa;
+  border:2px solid #fff;box-shadow:0 2px 8px rgba(25,19,37,.14)}
 .av svg{width:100%;height:100%;display:block}
 .av img{width:100%;height:100%;display:block;object-fit:cover}
 .pill.sex{background:#2b221c;color:var(--dim)}
@@ -174,7 +176,7 @@ pierce-household, wix-default-custom-element { display:block; width:100%; overfl
 .ghost[aria-pressed="true"]{border-style:solid;border-color:var(--fav);background:rgba(199,138,214,.09)}
 
 .scanbar{position:fixed;left:0;right:0;bottom:0;padding:12px 20px calc(14px + env(safe-area-inset-bottom));
-  background:linear-gradient(to top,#eef0ff 62%,rgba(238,240,255,0));z-index:20}
+  background:linear-gradient(to top,#ded3f2 62%,rgba(222,211,242,0));z-index:20}
 @media(min-width:820px){
   .scanbar{left:50%;transform:translateX(-50%);right:auto;bottom:24px;padding:0;
     background:none;width:min(560px,calc(100vw - 64px))}
@@ -255,7 +257,7 @@ const MOTION = `
 }`;
 
 const BASE = 'https://pierceology.github.io/jnoir-elements/';
-const BUILD = '15 Sep 13:32';
+const BUILD = '15 Sep 13:45';
 
 const SCAN_CSS = `
 .scr{position:fixed;inset:0;z-index:100001;background:#0d0b09;
@@ -317,7 +319,7 @@ const SCAN_CSS = `
 .who-pick button{flex:1 1 44%;display:flex;align-items:center;gap:8px;appearance:none;cursor:pointer;
   border:1px solid var(--line);border-radius:11px;background:#2b221c;color:var(--ink);
   font:600 13px/1 inherit;padding:8px 10px}
-.who-pick .av{width:28px;height:28px;border-radius:8px}
+.who-pick .av{width:34px;height:34px;border-radius:11px;border-width:1.5px}
 .mine{flex:0 0 100%;margin-top:4px;min-width:0;max-width:100%}
 .mine ul,.mine li{min-width:0;max-width:100%}
 .mine button{max-width:100%}
@@ -332,8 +334,23 @@ const SCAN_CSS = `
 .mine button img{width:30px;height:30px;border-radius:7px;object-fit:contain;background:#fff;flex:none}
 .mine button span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
+/* Us: the photograph is the card. Square, because every one of these was
+   framed for a face and a square crop is the one that keeps it. */
+.card.person{padding:0;overflow:hidden}
+.face{position:relative;aspect-ratio:1/1;overflow:hidden;
+  background:color-mix(in srgb,var(--acc,#e8386f) 15%,#fff)}
+.face img{width:100%;height:100%;object-fit:cover;display:block}
+.face svg{width:100%;height:100%;display:block}
+.face::after{content:'';position:absolute;inset:44% 0 0 0;pointer-events:none;
+  background:linear-gradient(180deg,transparent,rgba(18,12,28,.78))}
+.face .nm{position:absolute;z-index:1;left:17px;right:17px;bottom:13px;margin:0;color:#fff;
+  font:600 clamp(21px,5.6vw,26px)/1.08 inherit;letter-spacing:-.025em;
+  text-shadow:0 2px 14px rgba(0,0,0,.45)}
+.pbody{padding:15px 18px 18px}
+
 .hero{display:flex;align-items:center;gap:18px;margin:6px 0 26px}
-.hero .av{width:88px;height:88px;border-radius:24px}
+.hero .av{width:clamp(104px,30vw,148px);height:clamp(104px,30vw,148px);border-radius:34px;
+  border-width:3px;box-shadow:0 6px 18px rgba(25,19,37,.20)}
 .hero h2{margin:0;font-size:clamp(30px,9vw,46px);line-height:1;letter-spacing:-.03em;font-weight:600}
 .hero p{margin:8px 0 0;font-size:13px;color:var(--dim)}
 .back{appearance:none;border:1px solid var(--line);background:var(--card);box-shadow:var(--shadow);color:var(--dim);
@@ -1245,16 +1262,18 @@ class PierceHousehold extends HTMLElement {
       const fav = String(p.favourites||'').split(',').map(s=>s.trim()).filter(Boolean);
       const no  = String(p.avoid||'').split(',').map(s=>s.trim()).filter(Boolean);
       const armed = this.mode==='fav' && this.favPerson===p.title;
-      return `<div class="card tap" data-person="${esc(p.title)}">
-        <div class="who"><span class="av">${avatarFor(p.title, 'human', p.sex, p.accent)}</span>
-          <div><p class="rt">${esc(p.title)}</p>
-            <p class="rs">${fav.length} favourite${fav.length===1?'':'s'}</p></div></div>
-        ${fav.length ? `<div class="chips">${fav.map(f=>`<span class="chip">${esc(f)}</span>`).join('')}</div>`
-                     : `<p class="empty">No favourites yet. Hit the button, then scan whatever ${esc(p.title.split(' ')[0])} loves.</p>`}
-        ${no.length ? `<p class="klabel" style="margin:14px 0 7px">Never buy</p>
-          <div class="chips">${no.map(f=>`<span class="chip">${esc(f)}</span>`).join('')}</div>` : ''}
-        <button class="ghost" data-fav="${esc(p.title)}" aria-pressed="${armed}">${
-          armed ? 'Scanning favourites — tap to stop' : `Scan ${esc(p.title.split(' ')[0])}'s favourites`}</button>
+      return `<div class="card tap person" data-person="${esc(p.title)}" style="--acc:${esc(p.accent||'#e8386f')}">
+        <div class="face">${avatarFor(p.title, 'human', p.sex, p.accent)}
+          <p class="nm">${esc(p.title)}</p></div>
+        <div class="pbody">
+          <p class="rs" style="margin:0 0 10px">${fav.length} favourite${fav.length===1?'':'s'}</p>
+          ${fav.length ? `<div class="chips">${fav.map(f=>`<span class="chip">${esc(f)}</span>`).join('')}</div>`
+                       : `<p class="empty">No favourites yet. Hit the button, then scan whatever ${esc(p.title.split(' ')[0])} loves.</p>`}
+          ${no.length ? `<p class="klabel" style="margin:14px 0 7px">Never buy</p>
+            <div class="chips">${no.map(f=>`<span class="chip">${esc(f)}</span>`).join('')}</div>` : ''}
+          <button class="ghost" data-fav="${esc(p.title)}" aria-pressed="${armed}">${
+            armed ? 'Scanning favourites — tap to stop' : `Scan ${esc(p.title.split(' ')[0])}'s favourites`}</button>
+        </div>
       </div>`;}).join('')}</div>`;
   }
 
