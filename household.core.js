@@ -12,15 +12,17 @@ const CSS = `
 pierce-household, wix-default-custom-element { display:block; width:100%; overflow:visible; }
 .hh{
   --ink:#191325; --dim:#5f5773; --faint:#948ca8;
-  --bg:#efe9f8; --bg2:#ffffff; --card:#ffffff; --card2:#ffffff; --line:#ddd4ee;
+  --bg:#e9def5; --bg2:#ffffff; --card:#ffffff; --card2:#ffffff; --line:#d6cae9;
   --gold:#e8386f; --mango:#f4722b; --good:#0ca678; --warn:#e07c0a; --bad:#e03131; --fav:#6741d9;
   --shadow:0 1px 2px rgba(25,19,37,.06), 0 8px 24px rgba(25,19,37,.10);
   /* Two glows, not four. Four accents at low opacity is what made this feel
      like it might blow away; two at strength give it somewhere to stand. */
   background:
-    radial-gradient(1200px 700px at 4% -12%, rgba(232,56,111,.30), transparent 62%),
-    radial-gradient(980px 640px at 100% 2%, rgba(103,65,217,.26), transparent 60%),
-    linear-gradient(180deg, #fdfaff 0%, var(--bg) 50%, #ded3f2 100%);
+    radial-gradient(1200px 700px at 4% -12%, rgba(232,56,111,.38), transparent 62%),
+    radial-gradient(980px 640px at 100% 2%, rgba(103,65,217,.34), transparent 60%),
+    radial-gradient(1000px 620px at 52% 112%, rgba(244,114,43,.22), transparent 66%),
+    linear-gradient(180deg, #fdf7fc 0%, var(--bg) 44%, #c9b7e6 100%);
+  background-attachment:scroll;
   color:var(--ink);
   font:400 16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,system-ui,sans-serif;
   -webkit-font-smoothing:antialiased; text-wrap:pretty;
@@ -53,6 +55,13 @@ pierce-household, wix-default-custom-element { display:block; width:100%; overfl
 .crest img{width:100%;height:100%;object-fit:cover;display:block}
 @media(max-width:420px){ .crest{width:54px;height:54px;border-radius:18px} }
 @media(min-width:820px){ .top{padding:56px 0 30px} .when{font-size:13px} }
+/* Below this the title, the crest and the date cannot share one line without
+   the date landing on top of the word Dashboard. So it takes its own. */
+@media(max-width:640px){
+  .top{flex-wrap:wrap;align-items:flex-start;gap:9px;padding:26px 0 20px}
+  .brandline{flex:1 1 100%}
+  .when{flex:1 1 100%;text-align:left;white-space:normal;line-height:1.5}
+}
 .name{font-size:11.5px;letter-spacing:.34em;text-transform:uppercase;color:var(--gold);margin:0 0 10px;
   opacity:.85}
 .h1{font-size:clamp(34px,10vw,60px);line-height:.98;letter-spacing:-.035em;margin:0;font-weight:600}
@@ -176,7 +185,7 @@ pierce-household, wix-default-custom-element { display:block; width:100%; overfl
 .ghost[aria-pressed="true"]{border-style:solid;border-color:var(--fav);background:rgba(199,138,214,.09)}
 
 .scanbar{position:fixed;left:0;right:0;bottom:0;padding:12px 20px calc(14px + env(safe-area-inset-bottom));
-  background:linear-gradient(to top,#ded3f2 62%,rgba(222,211,242,0));z-index:20}
+  background:linear-gradient(to top,#c9b7e6 60%,rgba(201,183,230,0));z-index:20}
 @media(min-width:820px){
   .scanbar{left:50%;transform:translateX(-50%);right:auto;bottom:24px;padding:0;
     background:none;width:min(560px,calc(100vw - 64px))}
@@ -257,7 +266,7 @@ const MOTION = `
 }`;
 
 const BASE = 'https://pierceology.github.io/jnoir-elements/';
-const BUILD = '15 Sep 13:45';
+const BUILD = '15 Sep 13:47';
 
 const SCAN_CSS = `
 .scr{position:fixed;inset:0;z-index:100001;background:#0d0b09;
