@@ -255,7 +255,7 @@ const MOTION = `
 }`;
 
 const BASE = 'https://pierceology.github.io/jnoir-elements/';
-const BUILD = '14 Sep 16:43';
+const BUILD = '14 Sep 22:49';
 
 const SCAN_CSS = `
 .scr{position:fixed;inset:0;z-index:100001;background:#0d0b09;
@@ -391,9 +391,9 @@ const faceFor = (kind, sex, accent) => {
   return (FACE[kind] || FACE.human)(k === 'f' ? 'f' : k === 'm' ? 'm' : 'x', accent || '#f0b955');
 };
 
-/* Real faces, where we have one. A centred square crop beheads half of these
-   photographs, so each carries the object-position measured off its original;
-   Smokey has no picture yet and keeps the drawn cat. */
+/* Real faces, all of them. A centred square crop beheads half of these
+   photographs, so each carries the object-position measured off its original.
+   The drawn faces stay as the fallback for anyone who joins later. */
 const PHOTO = {
   'pierce':       ['pierce.jpg', '52% 34%'],
   'lacey':        ['lacey.jpg',  '58% 33%'],
@@ -404,7 +404,8 @@ const PHOTO = {
   'adom':         ['adom.jpg',   '58% 42%'],
   'zuma':         ['zuma.jpg',   '53% 43%'],
   'chase':        ['chase.jpg',  '77% 50%'],
-  'ryder':        ['ryder.jpg',  '23% 56%']
+  'ryder':        ['ryder.jpg',  '23% 56%'],
+  'smokey':       ['smokey.jpg', '51% 37%']
 };
 const avatarFor = (name, kind, sex, accent) => {
   const p = PHOTO[String(name == null ? '' : name).trim().toLowerCase()];
